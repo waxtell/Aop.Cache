@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Aop.Cache.ExpirationManagement;
 using Castle.DynamicProxy;
+using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
@@ -11,7 +12,7 @@ namespace Aop.Cache
     {
         public T Object { get; }
         private readonly List<Expectation> _expectations = new List<Expectation>();
-        private readonly Dictionary<Guid, (object invocationResult,DateTime invocationDateTime)> _cachedInvocations = new Dictionary<Guid, (object invocationResult, DateTime invocationDateTime)>();
+        private readonly Dictionary<Guid, Dictionary<string,(object invocationResult,DateTime invocationDateTime)>> _cachedInvocations = new Dictionary<Guid, Dictionary<string,(object invocationResult, DateTime invocationDateTime)>>();
 
         private void Cache(MethodCallExpression expression, IExpirationDelegate expirationDelegate)
         {
@@ -52,16 +53,33 @@ namespace Aop.Cache
 
             if (expectation != null)
             {
-                if (_cachedInvocations.TryGetValue(expectation.Identifier, out var cachedValue))
+                var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
+
+                if (_cachedInvocations.TryGetValue(expectation.Identifier, out var cachedInvocation))
                 {
-                    if (expectation.IsExpired(cachedValue.invocationResult, cachedValue.invocationDateTime))
+                    if (cachedInvocation.TryGetValue(cacheKey, out var cachedValue))
                     {
-                        invocation.Proceed();
-                        _cachedInvocations[expectation.Identifier] = (invocation.ReturnValue, DateTime.UtcNow);
+                        if (expectation.IsExpired(cachedValue.invocationResult, cachedValue.invocationDateTime))
+                        {
+                            invocation.Proceed();
+
+                            cachedInvocation[cacheKey] = (invocation.ReturnValue, DateTime.UtcNow);
+                        }
+                        else
+                        {
+                            invocation.ReturnValue = cachedValue.invocationResult;
+                        }
                     }
                     else
                     {
-                        invocation.ReturnValue = cachedValue.invocationResult;
+                        invocation.Proceed();
+
+                        cachedInvocation
+                            .Add
+                            (
+                                cacheKey,
+                                (invocation.ReturnValue, DateTime.UtcNow)
+                            );
                     }
                 }
                 else
@@ -71,8 +89,14 @@ namespace Aop.Cache
                     _cachedInvocations
                         .Add
                         (
-                            expectation.Identifier, 
-                            (invocation.ReturnValue, DateTime.UtcNow)
+                            expectation.Identifier,
+                            new Dictionary<string, (object invocationResult, DateTime invocationDateTime)>
+                                {
+                                    {
+                                        cacheKey,
+                                        (invocation.ReturnValue, DateTime.UtcNow)
+                                    }
+                                }
                         );
                 }
             }

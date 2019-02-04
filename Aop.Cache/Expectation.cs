@@ -13,31 +13,51 @@ namespace Aop.Cache
 
         private readonly string _methodName;
         private readonly Type _returnType;
-        private readonly IEnumerable<int> _argumentHashCodes;
+        private readonly IEnumerable<Parameter> _parameters;
         private readonly IExpirationDelegate _expiration;
 
-        private Expectation(string methodName, Type returnType, IEnumerable<object> arguments, IExpirationDelegate expiration)
+        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, IExpirationDelegate expiration)
         {
             Identifier = Guid.NewGuid();
 
             _methodName = methodName;
             _returnType = returnType;
-            _argumentHashCodes = arguments.Select(x => x.GetHashCode());
+            _parameters = parameters;
             _expiration = expiration;
         }
 
-        private static object GetArgumentValue(Expression element)
+        private static Parameter ToParameter(Expression element)
         {
             if (element is ConstantExpression expression)
             {
-                return expression.Value;
+                return Parameter.MatchExact(expression.Value);
+            }
+
+            if (element is MethodCallExpression methodCall)
+            {
+                if (methodCall.Method.DeclaringType == typeof(It))
+                {
+                    if (methodCall.Method.Name == nameof(It.IsAny))
+                    {
+                        return Parameter.MatchAny();
+                    }
+
+                    if (methodCall.Method.Name == nameof(It.IsNotNull))
+                    {
+                        return Parameter.MatchNotNull();
+                    }
+                }
             }
 
             return 
-                Expression
-                    .Lambda(Expression.Convert(element, element.Type))
-                    .Compile()
-                    .DynamicInvoke();
+                Parameter
+                    .MatchExact
+                    (
+                        Expression
+                            .Lambda(Expression.Convert(element, element.Type))
+                            .Compile()
+                            .DynamicInvoke()
+                    );
         }
 
         public static Expectation FromMethodCallExpression(MethodCallExpression expression, IExpirationDelegate expirationDelegate)
@@ -46,7 +66,7 @@ namespace Aop.Cache
             (
                 expression.Method.Name,
                 expression.Method.ReturnType,
-                expression.Arguments.Select(GetArgumentValue),
+                expression.Arguments.Select(ToParameter).ToArray(),
                 expirationDelegate
             );
         }
@@ -69,12 +89,25 @@ namespace Aop.Cache
 
         public bool IsHit(string methodName, Type returnType, object[] arguments)
         {
-            return
-            (
-                _methodName == methodName &&
-                _returnType == returnType &&
-                arguments.Select(x => x.GetHashCode()).SequenceEqual(_argumentHashCodes)
-            );
+            if (methodName != _methodName || returnType != _returnType)
+            {
+                return false;
+            }
+
+            if (arguments.Length != _parameters.Count())
+            {
+                return false;
+            }
+
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                if (!_parameters.ElementAt(i).IsMatch(arguments[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

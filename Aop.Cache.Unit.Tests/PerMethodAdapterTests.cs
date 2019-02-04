@@ -69,5 +69,24 @@ namespace Aop.Cache.Unit.Tests
 
             Assert.Equal(3, instance.InvocationHistory.Count(x => x == "DoStuff"));
         }
+
+        [Fact]
+        public void MixedFuzzyInvocationsYieldsMultipleInvocations()
+        {
+            var instance = new ForTestingPurposes();
+            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
+            var proxy = adapter.Object;
+
+            adapter.Cache(x => x.DoStuff(It.IsAny<int>(), "zero"), While.Result.True<string>((r, dt) => true));
+
+            proxy.DoStuff(0, "zero");
+            proxy.DoStuff(0, "zero");
+            proxy.DoStuff(1, "zero");
+            proxy.DoStuff(1, "zero");
+            proxy.DoStuff(2, "zero");
+            proxy.DoStuff(2, "zero");
+
+            Assert.Equal(3, instance.InvocationHistory.Count(x => x == "DoStuff"));
+        }
     }
 }
