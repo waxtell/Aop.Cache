@@ -2,6 +2,9 @@
 Simple, method centric, AOP cache adapter.
 
 Basic functionality only at present.
+
+[![Build status](https://ci.appveyor.com/api/projects/status/hxyxeqsgos31dhh7?svg=true)](https://ci.appveyor.com/project/waxtell/aop-cache)
+
 ```csharp
                 var proxy = new PerMethodAdapter<ITokenClient>(client);
 
