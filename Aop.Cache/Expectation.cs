@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Aop.Cache.ExpirationManagement;
 using Castle.DynamicProxy;
 
@@ -67,6 +68,19 @@ namespace Aop.Cache
                 expression.Method.Name,
                 expression.Method.ReturnType,
                 expression.Arguments.Select(ToParameter).ToArray(),
+                expirationDelegate
+            );
+        }
+
+        public static Expectation FromMemberAccessExpression(MemberExpression expression, IExpirationDelegate expirationDelegate)
+        {
+            var propertyInfo = (PropertyInfo) expression.Member;
+
+            return new Expectation
+            (
+                propertyInfo.GetMethod.Name,
+                propertyInfo.PropertyType,
+                new List<Parameter>(), 
                 expirationDelegate
             );
         }

@@ -12,7 +12,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void SignatureMatchYieldsHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0,"zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0,"zero");
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -20,7 +20,7 @@ namespace Aop.Cache.Unit.Tests
             var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
             var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
 
-            methodInfo.Setup(x => x.Name).Returns("DoStuff");
+            methodInfo.Setup(x => x.Name).Returns("MethodCall");
             methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
             invocation.Setup(x => x.Method).Returns(methodInfo.Object);
@@ -32,7 +32,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void FuzzyMatchYieldsHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(It.IsAny<int>(), "zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(It.IsAny<int>(), "zero");
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -40,7 +40,7 @@ namespace Aop.Cache.Unit.Tests
             var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
             var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
 
-            methodInfo.Setup(x => x.Name).Returns("DoStuff");
+            methodInfo.Setup(x => x.Name).Returns("MethodCall");
             methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
             invocation.Setup(x => x.Method).Returns(methodInfo.Object);
@@ -52,7 +52,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void NotNullExpectationNotNullValueYieldsHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0, It.IsNotNull<string>());
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, It.IsNotNull<string>());
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -60,7 +60,7 @@ namespace Aop.Cache.Unit.Tests
             var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
             var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
 
-            methodInfo.Setup(x => x.Name).Returns("DoStuff");
+            methodInfo.Setup(x => x.Name).Returns("MethodCall");
             methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
             invocation.Setup(x => x.Method).Returns(methodInfo.Object);
@@ -72,7 +72,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void NotNullExpectationNullParameterYieldsNoHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0, It.IsNotNull<string>());
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, It.IsNotNull<string>());
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -80,7 +80,7 @@ namespace Aop.Cache.Unit.Tests
             var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
             var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
 
-            methodInfo.Setup(x => x.Name).Returns("DoStuff");
+            methodInfo.Setup(x => x.Name).Returns("MethodCall");
             methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
             invocation.Setup(x => x.Method).Returns(methodInfo.Object);
@@ -92,7 +92,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void ReturnTypeMismatchYieldsNoHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0, "zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -100,7 +100,7 @@ namespace Aop.Cache.Unit.Tests
             var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
             var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
 
-            methodInfo.Setup(x => x.Name).Returns("DoStuff");
+            methodInfo.Setup(x => x.Name).Returns("MethodCall");
             methodInfo.Setup(x => x.ReturnType).Returns(typeof(int));
 
             invocation.Setup(x => x.Method).Returns(methodInfo.Object);
@@ -112,7 +112,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void ParameterMismatchYieldsNoHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0, "zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -120,7 +120,7 @@ namespace Aop.Cache.Unit.Tests
             var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
             var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
 
-            methodInfo.Setup(x => x.Name).Returns("DoStuff");
+            methodInfo.Setup(x => x.Name).Returns("MethodCall");
             methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
             invocation.Setup(x => x.Method).Returns(methodInfo.Object);
@@ -132,7 +132,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void MethodNameMismatchYieldsNoHit()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0, "zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
             var expiration = For.Milliseconds(0);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);

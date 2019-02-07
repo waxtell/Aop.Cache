@@ -10,7 +10,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void ExpiredExpectationYieldsIsExpiredTrue()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0,"zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0,"zero");
             var expiration = While.Result.True<string>((i, dt) => false);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
@@ -21,7 +21,7 @@ namespace Aop.Cache.Unit.Tests
         [Fact]
         public void NotExpredExpectationYieldsIsExpiredTrue()
         {
-            Expression<Func<ForTestingPurposes, string>> expression = s => s.DoStuff(0, "zero");
+            Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
             var expiration = While.Result.True<string>((i, dt) => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);

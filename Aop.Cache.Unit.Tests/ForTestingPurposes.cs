@@ -1,27 +1,46 @@
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-
 namespace Aop.Cache.Unit.Tests
 {
     public interface IForTestingPurposes
     {
-        string DoStuff(int arg1, string arg2);
+        string MethodCall(int arg1, string arg2);
+
+        string Member { get; set; }
     }
 
     public class ForTestingPurposes : IForTestingPurposes
     {
-        public Stack<string> InvocationHistory { get; } = new Stack<string>();
+        public uint MemberGetInvocationCount { get; private set; }
+        public uint MemberSetInvocationCount { get; private set; }
+        public uint MethodCallInvocationCount { get; private set; }
 
-        public string DoStuff(int arg1, string arg2)
+        private string _member;
+
+        public string Member
         {
-            LogInvocation();
+            get
+            {
+                MemberGetInvocationCount++;
+                return _member;
+            }
 
+            set
+            {
+                MemberSetInvocationCount++;
+                _member = value;
+            }
+        }
+
+        public string MethodCall(int arg1, string arg2)
+        {
+            MethodCallInvocationCount++;
             return arg1 + arg2;
         }
 
-        private void LogInvocation([CallerMemberName] string callerName = "")
+        public ForTestingPurposes()
         {
-            InvocationHistory.Push(callerName);
+            MemberGetInvocationCount = 0;
+            MemberSetInvocationCount = 0;
+            MethodCallInvocationCount = 0;
         }
     }
  }

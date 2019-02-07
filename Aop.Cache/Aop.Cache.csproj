@@ -2,14 +2,15 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard1.3;net46</TargetFrameworks>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>Will Axtell</Authors>
     <Description>Simple library for aspect oriented caching.</Description>
     <PackageProjectUrl>https://github.com/waxtell/Aop.Cache</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/waxtell/Aop.Cache/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/waxtell/Aop.Cache.git</RepositoryUrl>
     <PackageTags>Cache AOP DynamicProxy</PackageTags>
-    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <PackageReleaseNotes>[1.1.0] Initial release
+[1.2.0] Support for MemberExpression (property getters)</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

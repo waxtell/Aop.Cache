@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
-    public class PerMethodAdapter<T> : IInterceptor where T : class
+    public class PerMethodAdapter<T> : IInterceptor, IPerMethodAdapter<T> where T : class
     {
         public T Object { get; }
         private readonly List<Expectation> _expectations = new List<Expectation>();
@@ -16,22 +16,25 @@ namespace Aop.Cache
 
         private void Cache(MethodCallExpression expression, IExpirationDelegate expirationDelegate)
         {
-            if (expression == null)
-            {
-                throw new ArgumentNullException(nameof(expression));
-            }
-
             _expectations.Add(Expectation.FromMethodCallExpression(expression, expirationDelegate));
         }
 
-        public void Cache<TReturn>(Expression<Func<T, TReturn>> target, IExpirationDelegate expirationDelegate)
+        private void Cache(MemberExpression expression, IExpirationDelegate expirationDelegate)
         {
-            if (target == null)
+            _expectations.Add(Expectation.FromMemberAccessExpression(expression, expirationDelegate));
+        }
+
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, IExpirationDelegate expirationDelegate)
+        {
+            MethodCallExpression expression = null;
+
+            if (target.Body is MemberExpression memberExpression)
             {
-                throw new ArgumentNullException(nameof(target));
+                Cache(memberExpression, expirationDelegate);
+
+                return this;
             }
 
-            MethodCallExpression expression = null;
             if (target.Body is UnaryExpression unaryExpression)
             {
                 expression = unaryExpression.Operand as MethodCallExpression;
@@ -40,15 +43,12 @@ namespace Aop.Cache
             expression = expression ?? target.Body as MethodCallExpression;
             
             Cache(expression, expirationDelegate);
+
+            return this;
         }
 
         public void Intercept(IInvocation invocation)
         {
-            if (invocation == null)
-            {
-                throw new ArgumentNullException(nameof(invocation));
-            }
-
             var expectation = _expectations.FirstOrDefault(x => x.IsHit(invocation));
 
             if (expectation != null)
