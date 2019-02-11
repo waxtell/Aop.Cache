@@ -85,6 +85,17 @@ namespace Aop.Cache
             );
         }
 
+        public static Expectation FromInvocation(IInvocation invocation, IExpirationDelegate expirationDelegate)
+        {
+            return new Expectation
+            (
+                invocation.MethodInvocationTarget.Name,
+                invocation.MethodInvocationTarget.ReturnType,
+                invocation.Arguments.Select(Parameter.MatchExact),
+                expirationDelegate
+            );
+        }
+
         public bool IsHit(IInvocation invocation)
         {
             return
