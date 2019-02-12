@@ -26,7 +26,7 @@ namespace Aop.Cache.Unit.Tests
             var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
             var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(0,"zero"), While.Result.True<string>((r,dt) => true));
+            adapter.Cache(x => x.MethodCall(0,"zero"), For.Ever());
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -42,7 +42,7 @@ namespace Aop.Cache.Unit.Tests
             var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
             var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>((r, dt) => false));
+            adapter.Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>((result,dt) => false));
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -59,7 +59,7 @@ namespace Aop.Cache.Unit.Tests
             var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
             var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>((r, dt) => true));
+            adapter.Cache(x => x.MethodCall(0, "zero"), For.Ever());
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -76,7 +76,7 @@ namespace Aop.Cache.Unit.Tests
             var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
             var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), While.Result.True<string>((r, dt) => true));
+            adapter.Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever());
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -95,7 +95,7 @@ namespace Aop.Cache.Unit.Tests
             var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
             var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), While.Result.True<string>((r, dt) => true));
+            adapter.Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever());
 
             proxy.MethodCall(0, "zero");
             var result0 = proxy.MethodCall(0, "zero");
@@ -115,7 +115,7 @@ namespace Aop.Cache.Unit.Tests
             var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
             var proxy = adapter.Object;
 
-            adapter.Cache(x => x.Member, While.Result.True<string>((r, dt) => true));
+            adapter.Cache(x => x.Member, For.Ever());
 
             proxy.Member = "test";
             // ReSharper disable once RedundantAssignment

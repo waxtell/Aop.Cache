@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices.ComTypes;
-
-namespace Aop.Cache
+﻿namespace Aop.Cache
 {
     public static class It
     {
