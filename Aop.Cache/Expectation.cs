@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Aop.Cache.ExpirationManagement;
 using Castle.DynamicProxy;
 
 namespace Aop.Cache
@@ -15,9 +14,9 @@ namespace Aop.Cache
         private readonly string _methodName;
         private readonly Type _returnType;
         private readonly IEnumerable<Parameter> _parameters;
-        private readonly IExpirationDelegate _expiration;
+        private readonly Func<object,DateTime,bool> _expiration;
 
-        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, IExpirationDelegate expiration)
+        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, Func<object, DateTime, bool> expiration)
         {
             Identifier = Guid.NewGuid();
 
@@ -61,7 +60,19 @@ namespace Aop.Cache
                     );
         }
 
-        public static Expectation FromMethodCallExpression(MethodCallExpression expression, IExpirationDelegate expirationDelegate)
+        internal static Expectation FromMethodCallExpression<TReturn>(MethodCallExpression expression, Func<TReturn, DateTime, bool> expirationDelegate)
+        {
+            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
+            return FromMethodCallExpression(expression, expr.Compile());
+        }
+
+        internal static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<DateTime, bool> expirationDelegate)
+        {
+            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
+            return FromMethodCallExpression(expression, expr.Compile());
+        }
+
+        public static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<object, DateTime, bool> expirationDelegate)
         {
             return new Expectation
             (
@@ -72,7 +83,7 @@ namespace Aop.Cache
             );
         }
 
-        public static Expectation FromMemberAccessExpression(MemberExpression expression, IExpirationDelegate expirationDelegate)
+        public static Expectation FromMemberAccessExpression(MemberExpression expression, Func<object, DateTime, bool> expirationDelegate)
         {
             var propertyInfo = (PropertyInfo) expression.Member;
 
@@ -85,7 +96,7 @@ namespace Aop.Cache
             );
         }
 
-        public static Expectation FromInvocation(IInvocation invocation, IExpirationDelegate expirationDelegate)
+        public static Expectation FromInvocation(IInvocation invocation, Func<object, DateTime, bool> expirationDelegate)
         {
             return new Expectation
             (
@@ -109,7 +120,7 @@ namespace Aop.Cache
 
         public bool IsExpired(object cachedValue, DateTime executionDateTimeUtc)
         {
-            return _expiration.HasExpired(cachedValue, executionDateTimeUtc);
+            return _expiration.Invoke(cachedValue, executionDateTimeUtc);
         }
 
         public bool IsHit(string methodName, Type returnType, object[] arguments)

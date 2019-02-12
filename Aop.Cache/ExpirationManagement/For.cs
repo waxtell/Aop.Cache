@@ -4,21 +4,27 @@ namespace Aop.Cache.ExpirationManagement
 {
     public static class For
     {
-        public static IExpirationDelegate Milliseconds(int numMilliseconds)
+        public static Func<DateTime, bool> Milliseconds(int numMilliseconds)
         {
-            return new ExpirationDelegate(x => DateTime.UtcNow > x.AddMilliseconds(numMilliseconds));
+            return (dt) => DateTime.UtcNow > dt.AddMilliseconds(numMilliseconds);
         }
-        public static IExpirationDelegate Seconds(int numSeconds)
+        public static Func<DateTime, bool> Seconds(int numSeconds)
         {
-            return new ExpirationDelegate(x => DateTime.UtcNow>x.AddSeconds(numSeconds));
+            return (dt) => DateTime.UtcNow > dt.AddSeconds(numSeconds);
         }
-        public static IExpirationDelegate Minutes(int numMinutes)
+
+        public static Func<DateTime, bool> Minutes(int numMinutes)
         {
-            return new ExpirationDelegate(x => DateTime.UtcNow > x.AddMinutes(numMinutes));
+            return (dt) => DateTime.UtcNow > dt.AddMinutes(numMinutes);
         }
-        public static IExpirationDelegate Hours(int numHours)
+        public static Func<DateTime, bool> Hours(int numHours)
         {
-            return new ExpirationDelegate(x => DateTime.UtcNow > x.AddHours(numHours));
+            return (dt) => DateTime.UtcNow > dt.AddHours(numHours);
+        }
+
+        public static Func<DateTime, bool> Ever()
+        {
+            return (dt) => false;
         }
     }
 }

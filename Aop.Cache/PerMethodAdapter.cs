@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Aop.Cache.ExpirationManagement;
 using Castle.DynamicProxy;
 using Newtonsoft.Json;
 
@@ -11,33 +10,45 @@ namespace Aop.Cache
     public class PerMethodAdapter<T> : IInterceptor, IPerMethodAdapter<T> where T : class
     {
         public T Object { get; }
+
         private readonly List<Expectation> _expectations = new List<Expectation>();
         private readonly Dictionary<Guid, Dictionary<string,(object invocationResult,DateTime invocationDateTime)>> _cachedInvocations = new Dictionary<Guid, Dictionary<string,(object invocationResult, DateTime invocationDateTime)>>();
 
-        private void Cache(MethodCallExpression expression, IExpirationDelegate expirationDelegate)
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<TReturn, DateTime, bool> expirationDelegate)
+        {
+            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
+            return Cache(target, expr.Compile());
+        }
+
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<DateTime, bool> expirationDelegate)
+        {
+            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
+            return Cache(target, expr.Compile());
+        }
+
+        private void Cache(MethodCallExpression expression, Func<object, DateTime, bool> expirationDelegate)
         {
             _expectations.Add(Expectation.FromMethodCallExpression(expression, expirationDelegate));
         }
 
-        private void Cache(MemberExpression expression, IExpirationDelegate expirationDelegate)
+        private void Cache(MemberExpression expression, Func<object, DateTime, bool> expirationDelegate)
         {
             _expectations.Add(Expectation.FromMemberAccessExpression(expression, expirationDelegate));
         }
 
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, IExpirationDelegate expirationDelegate)
+        private IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<object,DateTime,bool> expirationDelegate)
         {
             MethodCallExpression expression = null;
 
-            if (target.Body is MemberExpression memberExpression)
+            switch (target.Body)
             {
-                Cache(memberExpression, expirationDelegate);
+                case MemberExpression memberExpression:
+                    Cache(memberExpression, expirationDelegate);
+                    return this;
 
-                return this;
-            }
-
-            if (target.Body is UnaryExpression unaryExpression)
-            {
-                expression = unaryExpression.Operand as MethodCallExpression;
+                case UnaryExpression unaryExpression:
+                    expression = unaryExpression.Operand as MethodCallExpression;
+                    break;
             }
 
             expression = expression ?? target.Body as MethodCallExpression;
@@ -49,6 +60,12 @@ namespace Aop.Cache
 
         public void Intercept(IInvocation invocation)
         {
+            if (invocation.Method.ReturnType == typeof(void))
+            {
+                invocation.Proceed();
+                return;
+            }
+
             var expectation = _expectations.FirstOrDefault(x => x.IsHit(invocation));
 
             if (expectation != null)

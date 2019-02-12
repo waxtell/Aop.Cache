@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Aop.Cache.ExpirationManagement;
+using System.Linq.Expressions;
 using Castle.DynamicProxy;
 using Newtonsoft.Json;
 
@@ -10,12 +10,18 @@ namespace Aop.Cache
     public class PerInstanceAdapter<T> : IInterceptor, IPerInstanceAdapter<T> where T : class
     {
         public T Object { get; }
-        private readonly IExpirationDelegate _expirationDelegate;
+        private readonly Func<object,DateTime,bool> _expirationDelegate;
         private readonly List<Expectation> _expectations = new List<Expectation>();
         private readonly Dictionary<Guid, Dictionary<string,(object invocationResult,DateTime invocationDateTime)>> _cachedInvocations = new Dictionary<Guid, Dictionary<string,(object invocationResult, DateTime invocationDateTime)>>();
 
         public void Intercept(IInvocation invocation)
         {
+            if(invocation.Method.ReturnType == typeof(void))
+            {
+                invocation.Proceed();
+                return;
+            }
+
             var expectation = _expectations.FirstOrDefault(x => x.IsHit(invocation));
             var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
 
@@ -88,12 +94,13 @@ namespace Aop.Cache
             }
         }
 
-        public PerInstanceAdapter(T instance, IExpirationDelegate expirationDelegate)
+        public PerInstanceAdapter(T instance, Func<DateTime,bool> expirationDelegate)
         {
-            _expirationDelegate = expirationDelegate;
+            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
+            _expirationDelegate = expr.Compile();
 
             Object = new ProxyGenerator()
-                        .CreateInterfaceProxyWithTarget(instance, this);
+                .CreateInterfaceProxyWithTarget(instance, this);
         }
     }
 }
