@@ -1,29 +1,69 @@
 # Aop.Cache
-Simple, method centric, AOP cache adapter.
+Simple,AOP cache adapter.
 
-Basic functionality only at present.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/hxyxeqsgos31dhh7?svg=true)](https://ci.appveyor.com/project/waxtell/aop-cache) [![NuGet Badge](https://buildstats.info/nuget/Aop.Cache)](https://www.nuget.org/packages/Aop.Cache/)
 
+**Explicit Parameter Matching**
+
 ```csharp
-                var proxy = new PerMethodAdapter<ITokenClient>(client);
+        [Fact]
+        public void MixedCachedInvocationsYieldsMultipleInvocations()
+        {
+            var instance = new ForTestingPurposes();
 
-                proxy
-                    .Cache
-                    (
-                        x => x.FromPassword
-                        (
-                            It.IsAny<string>(),  // username
-                            It.IsAny<string>(),  // password
-                            It.IsAny<string[]>() // scopes
-                        ),
-                        While
-                            .Result
-                            .True<TokenClient.Token>
-                            (
-                                (token, executionUtc) => DateTime.UtcNow < executionUtc.AddSeconds(token.ExpirationInSeconds)
-                            )
-                    );
+            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+                            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+                            .Object;
 
-                return proxy.Object;
+            proxy.MethodCall(0, "zero");
+            proxy.MethodCall(0, "zero");
+            proxy.MethodCall(1, "one");
+            proxy.MethodCall(2, "two");
+
+            Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
+        }
+
 ```
+**Fuzzy Parameter Matching**
+
+```csharp
+        [Fact]
+        public void MixedFuzzyInvocationsYieldsMultipleInvocations()
+        {
+            var instance = new ForTestingPurposes();
+
+            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+                            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                            .Object;
+
+            proxy.MethodCall(0, "zero");
+            proxy.MethodCall(0, "zero");
+            proxy.MethodCall(1, "zero");
+            proxy.MethodCall(1, "zero");
+            proxy.MethodCall(2, "zero");
+            proxy.MethodCall(2, "zero");
+
+            Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
+        }
+```
+**Per Instance (All methods cached)**
+```csharp
+        [Fact]
+        public void MultipleCachedInvocationsYieldsSingleActualInvocation()
+        {
+            var instance = new ForTestingPurposes();
+
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever())
+                            .Object;
+
+            proxy.MethodCall(0, "zero");
+            proxy.MethodCall(0, "zero");
+            proxy.MethodCall(0, "zero");
+
+            Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
+        }
+```
+
+[TODO]
+1) Support asynchronous operations.
