@@ -56,10 +56,10 @@ namespace Aop.Cache.Unit.Tests
         public void MixedInvocationsYieldsMultipleInvocations()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(0, "zero"), For.Ever());
+            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+                            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+                            .Object;
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -73,10 +73,10 @@ namespace Aop.Cache.Unit.Tests
         public void MixedFuzzyInvocationsYieldsMultipleInvocations()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
 
-            adapter.Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever());
+            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+                            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                            .Object;
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -106,6 +106,23 @@ namespace Aop.Cache.Unit.Tests
             Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
             Assert.Equal("0zero", result0);
             Assert.Equal("1zero", result1);
+        }
+
+        [Fact]
+        public void MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
+        {
+            var instance = new ForTestingPurposes();
+            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+                                .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                                .Object;
+
+            // ReSharper disable once NotAccessedVariable
+            // ReSharper disable once RedundantAssignment
+            var result = proxy.AsyncMethodCall(0, "zero").Result;
+            result = proxy.AsyncMethodCall(0, "zero").Result;
+
+            Assert.Equal<uint>(1,instance.AsyncMethodCallInvocationCount);
+            Assert.Equal("0zero", result);
         }
 
         [Fact]

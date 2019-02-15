@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Aop.Cache.ExpirationManagement;
 using Xunit;
 
@@ -9,8 +10,8 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleCachedInvocationsYieldsSingleActualInvocation()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever());
-            var proxy = adapter.Object;
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever())
+                            .Object;
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -37,16 +38,16 @@ namespace Aop.Cache.Unit.Tests
         }
 
         [Fact]
+        [SuppressMessage("ReSharper", "AssignmentIsFullyDiscarded")]
         public void MultipleDistinctCachedMemberInvocationsYieldsSingleActualInvocation()
         {
             var instance = new ForTestingPurposes();
             var adapter = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever());
             var proxy = adapter.Object;
 
-            // ReSharper disable once NotAccessedVariable
-            var memberValue = proxy.Member;
-            memberValue = proxy.Member;
-            memberValue = proxy.Member;
+            _ = proxy.Member;
+            _ = proxy.Member;
+            _ = proxy.Member;
 
             Assert.Equal<uint>(1, instance.MemberGetInvocationCount);
         }
