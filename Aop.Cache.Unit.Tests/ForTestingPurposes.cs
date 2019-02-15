@@ -16,6 +16,7 @@ namespace Aop.Cache.Unit.Tests
         public uint MemberGetInvocationCount { get; private set; }
         public uint MemberSetInvocationCount { get; private set; }
         public uint MethodCallInvocationCount { get; private set; }
+        public uint VirtualMethodCallInvocationCount { get; private set; }
         public uint AsyncMethodCallInvocationCount { get; private set; }
 
         private string _member;
@@ -41,6 +42,12 @@ namespace Aop.Cache.Unit.Tests
             return arg1 + arg2;
         }
 
+        public virtual string VirtualMethodCall(int arg1, string arg2)
+        {
+            VirtualMethodCallInvocationCount++;
+            return arg1 + arg2;
+        }
+
         public ForTestingPurposes()
         {
             MemberGetInvocationCount = 0;
@@ -52,7 +59,7 @@ namespace Aop.Cache.Unit.Tests
         {
             AsyncMethodCallInvocationCount++;
 
-            await Task.Delay(2000);
+            await Task.Delay(0);
 
             return arg1 + arg2;
         }
