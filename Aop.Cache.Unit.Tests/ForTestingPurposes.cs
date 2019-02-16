@@ -8,6 +8,8 @@ namespace Aop.Cache.Unit.Tests
 
         string Member { get; set; }
 
+        string VirtualMethodCall(int arg1, string arg2);
+
         Task<string> AsyncMethodCall(int arg1, string arg2);
     }
 
