@@ -37,14 +37,12 @@ namespace Aop.Cache
             {
                 if (methodCall.Method.DeclaringType == typeof(It))
                 {
-                    if (methodCall.Method.Name == nameof(It.IsAny))
+                    switch (methodCall.Method.Name)
                     {
-                        return Parameter.MatchAny();
-                    }
-
-                    if (methodCall.Method.Name == nameof(It.IsNotNull))
-                    {
-                        return Parameter.MatchNotNull();
+                        case nameof(It.IsAny):
+                            return Parameter.MatchAny();
+                        case nameof(It.IsNotNull):
+                            return Parameter.MatchNotNull();
                     }
                 }
             }
@@ -60,17 +58,17 @@ namespace Aop.Cache
                     );
         }
 
-        internal static Expectation FromMethodCallExpression<TReturn>(MethodCallExpression expression, Func<TReturn, DateTime, bool> expirationDelegate)
-        {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
-            return FromMethodCallExpression(expression, expr.Compile());
-        }
+        //internal static Expectation FromMethodCallExpression<TReturn>(MethodCallExpression expression, Func<TReturn, DateTime, bool> expirationDelegate)
+        //{
+        //    Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
+        //    return FromMethodCallExpression(expression, expr.Compile());
+        //}
 
-        internal static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<DateTime, bool> expirationDelegate)
-        {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
-            return FromMethodCallExpression(expression, expr.Compile());
-        }
+        //internal static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<DateTime, bool> expirationDelegate)
+        //{
+        //    Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
+        //    return FromMethodCallExpression(expression, expr.Compile());
+        //}
 
         public static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<object, DateTime, bool> expirationDelegate)
         {
