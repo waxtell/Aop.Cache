@@ -58,18 +58,6 @@ namespace Aop.Cache
                     );
         }
 
-        //internal static Expectation FromMethodCallExpression<TReturn>(MethodCallExpression expression, Func<TReturn, DateTime, bool> expirationDelegate)
-        //{
-        //    Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
-        //    return FromMethodCallExpression(expression, expr.Compile());
-        //}
-
-        //internal static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<DateTime, bool> expirationDelegate)
-        //{
-        //    Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
-        //    return FromMethodCallExpression(expression, expr.Compile());
-        //}
-
         public static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<object, DateTime, bool> expirationDelegate)
         {
             return new Expectation

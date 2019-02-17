@@ -66,4 +66,4 @@ Simple,AOP cache adapter.
 ```
 
 [TODO]
-1) Support asynchronous operations in the per instance caching adapter.
+1) Replace reflection with expressions in per instance async code

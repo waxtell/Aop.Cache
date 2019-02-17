@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
+using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
 using Xunit;
 
@@ -18,6 +20,24 @@ namespace Aop.Cache.Unit.Tests
             proxy.MethodCall(0, "zero");
 
             Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
+        }
+
+        [Fact]
+        public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
+        {
+            var instance = new ForTestingPurposes();
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever())
+                .Object;
+
+            // ReSharper disable once NotAccessedVariable
+            var result = await proxy.AsyncMethodCall(0, "zero");
+
+            Thread.Sleep(2000);
+
+            // ReSharper disable once RedundantAssignment
+            result = await proxy.AsyncMethodCall(0, "zero");
+
+            Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
         }
 
         [Fact]
