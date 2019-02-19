@@ -3,6 +3,7 @@ Simple,AOP cache adapter.
 
 
 [![Build status](https://ci.appveyor.com/api/projects/status/hxyxeqsgos31dhh7?svg=true)](https://ci.appveyor.com/project/waxtell/aop-cache) [![NuGet Badge](https://buildstats.info/nuget/Aop.Cache)](https://www.nuget.org/packages/Aop.Cache/)
+[![Coverage Status](https://coveralls.io/repos/github/waxtell/Aop.Cache/badge.svg?branch=master)](https://coveralls.io/github/waxtell/Aop.Cache?branch=master)
 
 **Explicit Parameter Matching**
 
