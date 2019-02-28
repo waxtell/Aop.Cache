@@ -12,8 +12,8 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleCachedInvocationsYieldsSingleActualInvocation()
         {
             var instance = new ForTestingPurposes();
-            var proxy = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever())
-                            .Object;
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever())
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -26,8 +26,8 @@ namespace Aop.Cache.Unit.Tests
         public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
         {
             var instance = new ForTestingPurposes();
-            var proxy = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever())
-                .Object;
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever())
+                            .Adapt(instance);
 
             // ReSharper disable once NotAccessedVariable
             var result = await proxy.AsyncMethodCall(0, "zero");
@@ -44,8 +44,7 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleDistinctCachedInvocationsYieldsSingleActualInvocationPerDistinctInvocation()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever());
-            var proxy = adapter.Object;
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever()).Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -62,8 +61,7 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleDistinctCachedMemberInvocationsYieldsSingleActualInvocation()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever());
-            var proxy = adapter.Object;
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever()).Adapt(instance);
 
             _ = proxy.Member;
             _ = proxy.Member;
@@ -76,8 +74,7 @@ namespace Aop.Cache.Unit.Tests
         public void VoidReturnTypeInvocationsAreNotCached()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerInstanceAdapter<IForTestingPurposes>(instance, For.Ever());
-            var proxy = adapter.Object;
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever()).Adapt(instance);
 
             proxy.Member = "Test";
             proxy.Member = "Test";

@@ -7,7 +7,7 @@ using Castle.DynamicProxy;
 
 namespace Aop.Cache
 {
-    internal class Expectation
+    public class Expectation
     {
         public Guid Identifier { get; }
 

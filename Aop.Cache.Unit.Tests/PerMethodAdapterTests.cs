@@ -11,8 +11,7 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
+            var proxy = new PerMethodAdapter<IForTestingPurposes>().Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -25,10 +24,9 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleCachedInvocationsYieldsSingleActualInvocation()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
-
-            adapter.Cache(x => x.MethodCall(0,"zero"), For.Ever());
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
+                            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -41,10 +39,9 @@ namespace Aop.Cache.Unit.Tests
         public void ExpiredInvocationsYieldsMultipleInvocations()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
-
-            adapter.Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>((result,dt) => false));
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
+                            .Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>((result, dt) => false))
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -59,9 +56,9 @@ namespace Aop.Cache.Unit.Tests
         {
             var instance = new ForTestingPurposes();
 
-            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
                             .Cache(x => x.MethodCall(0, "zero"), For.Ever())
-                            .Object;
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -76,9 +73,9 @@ namespace Aop.Cache.Unit.Tests
         {
             var instance = new ForTestingPurposes();
 
-            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
                             .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Object;
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -94,10 +91,9 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleCacheExpectationsYieldExpectedResult()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
-
-            adapter.Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever());
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
+                            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             var result0 = proxy.MethodCall(0, "zero");
@@ -114,9 +110,9 @@ namespace Aop.Cache.Unit.Tests
         public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
         {
             var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>(instance)
-                                .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                                .Object;
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
+                            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                            .Adapt(instance);
 
             // ReSharper disable once NotAccessedVariable
             // ReSharper disable once RedundantAssignment
@@ -138,10 +134,10 @@ namespace Aop.Cache.Unit.Tests
         {
             var instance = new ForTestingPurposes();
 
-            var proxy = new PerMethodAdapter<ForTestingPurposes>(instance)
+            var proxy = new PerMethodAdapter<ForTestingPurposes>()
                             .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
                             .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Object;
+                            .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
@@ -157,10 +153,9 @@ namespace Aop.Cache.Unit.Tests
         public void MultipleMemberInvocationsYieldsSingleInvocation()
         {
             var instance = new ForTestingPurposes();
-            var adapter = new PerMethodAdapter<IForTestingPurposes>(instance);
-            var proxy = adapter.Object;
-
-            adapter.Cache(x => x.Member, For.Ever());
+            var proxy = new PerMethodAdapter<IForTestingPurposes>()
+                            .Cache(x => x.Member, For.Ever())
+                            .Adapt(instance);
 
             proxy.Member = "test";
             // ReSharper disable once RedundantAssignment
