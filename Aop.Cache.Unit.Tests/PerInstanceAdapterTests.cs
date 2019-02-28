@@ -114,5 +114,33 @@ namespace Aop.Cache.Unit.Tests
 
             Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
         }
+
+        [Fact]
+        public void MultipleInstancesYieldsSingleActualInvocationPerDistinctInvocation()
+        {
+            var instance1 = new ForTestingPurposes();
+            var instance2 = new ForTestingPurposes();
+
+            var adapter = new PerInstanceAdapter<IForTestingPurposes>(For.Ever());
+            var proxy1 = adapter.Adapt(instance1);
+            var proxy2 = adapter.Adapt(instance2);
+
+            proxy1.MethodCall(0, "zero");
+            proxy1.MethodCall(0, "zero");
+            proxy1.MethodCall(1, "zero");
+            proxy1.MethodCall(1, "zero");
+            proxy1.MethodCall(2, "zero");
+            proxy1.MethodCall(2, "zero");
+
+            proxy2.MethodCall(0, "zero");
+            proxy2.MethodCall(0, "zero");
+            proxy2.MethodCall(1, "zero");
+            proxy2.MethodCall(1, "zero");
+            proxy2.MethodCall(2, "zero");
+            proxy2.MethodCall(2, "zero");
+
+            Assert.Equal<uint>(3, instance1.MethodCallInvocationCount);
+            Assert.Equal<uint>(0, instance2.MethodCallInvocationCount);
+        }
     }
 }
