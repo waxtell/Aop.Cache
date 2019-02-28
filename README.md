@@ -9,12 +9,12 @@ Simple,AOP cache adapter.
 
 ```csharp
 [Fact]
-public void MixedInvocationsYieldsMultipleInvocations()
+public void MixedInvocationsYieldsMultipleActualInvocations()
 {
     var instance = new ForTestingPurposes();
 
     var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                    .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+                    .Cache(x => x.MethodCall(0, "zero"), For.Seconds(30))
                     .Adapt(instance);
 
     proxy.MethodCall(0, "zero");
@@ -28,12 +28,12 @@ public void MixedInvocationsYieldsMultipleInvocations()
 **Fuzzy Parameter Matching**
 ```csharp
 [Fact]
-public void MixedFuzzyInvocationsYieldsMultipleInvocations()
+public void MixedFuzzyInvocationsYieldsMultipleActualInvocations()
 {
     var instance = new ForTestingPurposes();
 
     var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                    .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                    .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Minutes(5))
                     .Adapt(instance);
 
     proxy.MethodCall(0, "zero");
