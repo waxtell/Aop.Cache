@@ -74,8 +74,8 @@ namespace Aop.Cache
             (
                 MethodCallExpression expression, 
                 Func<object, DateTime, bool> expirationDelegate,
-                AddOrUpdateDelegate marshaller,
-                GetCachedResultDelegate unMarshaller
+                AddOrUpdateDelegate addOrUpdateCacheDelegate,
+                GetCachedResultDelegate getFromCacheDelegate
             )
         {
             Expectations
@@ -88,8 +88,8 @@ namespace Aop.Cache
                                 expression, 
                                 expirationDelegate
                             ),
-                        marshaller,
-                        unMarshaller
+                        addOrUpdateCacheDelegate,
+                        getFromCacheDelegate
                     )
                 );
         }
@@ -98,8 +98,8 @@ namespace Aop.Cache
             (
                 MemberExpression expression, 
                 Func<object, DateTime, bool> expirationDelegate,
-                AddOrUpdateDelegate marshaller,
-                GetCachedResultDelegate unMarshaller
+                AddOrUpdateDelegate addOrUpdateCacheDelegate,
+                GetCachedResultDelegate getFromCacheDelegate
             )
         {
             Expectations
@@ -112,8 +112,8 @@ namespace Aop.Cache
                                 expression, 
                                 expirationDelegate
                             ),
-                        marshaller,
-                        unMarshaller
+                        addOrUpdateCacheDelegate,
+                        getFromCacheDelegate
                     )
                 );
         }
@@ -122,8 +122,8 @@ namespace Aop.Cache
             (
                 Expression<Func<T, TReturn>> target, 
                 Func<object,DateTime,bool> expirationDelegate,
-                AddOrUpdateDelegate marshaller,
-                GetCachedResultDelegate unMarshaller
+                AddOrUpdateDelegate addOrUpdateCacheDelegate,
+                GetCachedResultDelegate getFromCacheDelegate
             )
         {
             MethodCallExpression expression = null;
@@ -131,7 +131,7 @@ namespace Aop.Cache
             switch (target.Body)
             {
                 case MemberExpression memberExpression:
-                    Cache(memberExpression, expirationDelegate,marshaller,unMarshaller);
+                    Cache(memberExpression, expirationDelegate,addOrUpdateCacheDelegate,getFromCacheDelegate);
                     return this;
 
                 case UnaryExpression unaryExpression:
@@ -141,20 +141,20 @@ namespace Aop.Cache
 
             expression = expression ?? target.Body as MethodCallExpression;
 
-            Cache(expression, expirationDelegate, marshaller,unMarshaller);
+            Cache(expression, expirationDelegate, addOrUpdateCacheDelegate,getFromCacheDelegate);
 
             return this;
         }
 
         public override void Intercept(IInvocation invocation)
         {
-            if (invocation.Method.ReturnType == typeof(void))
+            if (invocation.IsAction())
             {
                 invocation.Proceed();
                 return;
             }
 
-            var (expectation, addOrUpdateCache, unMarshallFromCache) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
+            var (expectation, addOrUpdateCache, getFromCache) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
 
             if (expectation != null)
             {
@@ -178,7 +178,7 @@ namespace Aop.Cache
                         }
                         else
                         {
-                            invocation.ReturnValue = unMarshallFromCache.Invoke(cachedValue.invocationResult);
+                            invocation.ReturnValue = getFromCache.Invoke(cachedValue.invocationResult);
                         }
                     }
                     else

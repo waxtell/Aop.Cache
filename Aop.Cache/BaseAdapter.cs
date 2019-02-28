@@ -14,8 +14,8 @@ namespace Aop.Cache
     {
         protected readonly List<(
                                     Expectation expectation,
-                                    AddOrUpdateDelegate marshaller,
-                                    GetCachedResultDelegate unmarshaller
+                                    AddOrUpdateDelegate addOrUpdateCacheDelegate,
+                                    GetCachedResultDelegate getFromCacheDelegate
                                 )
                             >
                             Expectations = new List

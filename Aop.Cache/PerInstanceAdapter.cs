@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Newtonsoft.Json;
 
@@ -14,13 +13,13 @@ namespace Aop.Cache
 
         public override void Intercept(IInvocation invocation)
         {
-            if (invocation.Method.ReturnType == typeof(void) || invocation.Method.ReturnType == typeof(Task))
+            if (invocation.IsAction())
             {
                 invocation.Proceed();
                 return;
             }
 
-            var (expectation, addOrUpdateCache, unMarshallFromCache) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
+            var (expectation, addOrUpdateCache, getFromCache) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
             var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
 
             if (expectation != null)
@@ -43,7 +42,7 @@ namespace Aop.Cache
                         }
                         else
                         {
-                            invocation.ReturnValue = unMarshallFromCache.Invoke(cachedValue.invocationResult);
+                            invocation.ReturnValue = getFromCache.Invoke(cachedValue.invocationResult);
                         }
                     }
                     else
@@ -87,7 +86,7 @@ namespace Aop.Cache
 
                 expectation = Expectation.FromInvocation(invocation, _expirationDelegate);
                 addOrUpdateCache = BuildAddOrUpdateDelegateForType(returnType);
-                unMarshallFromCache = BuildGetFromCacheDelegateForType(returnType);
+                getFromCache = BuildGetFromCacheDelegateForType(returnType);
 
                 Expectations
                     .Add
@@ -95,7 +94,7 @@ namespace Aop.Cache
                         (
                             expectation,
                             addOrUpdateCache,
-                            unMarshallFromCache
+                            getFromCache
                         )
                     );
 
