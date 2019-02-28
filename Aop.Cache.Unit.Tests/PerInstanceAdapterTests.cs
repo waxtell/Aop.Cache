@@ -82,5 +82,37 @@ namespace Aop.Cache.Unit.Tests
 
             Assert.Equal<uint>(3, instance.MemberSetInvocationCount);
         }
+
+        [Fact]
+        public async Task AsyncActionInvocationsAreNotCached()
+        {
+            var instance = new ForTestingPurposes();
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever()).Adapt(instance);
+
+            await proxy.AsyncAction(0, 1, "two");
+
+            Assert.Equal<uint>(1, instance.AsyncActionCallInvocationCount);
+        }
+
+        [Fact]
+        public async Task ExpiredResultYieldsMultipleActualInvocations()
+        {
+            var instance = new ForTestingPurposes();
+            var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Milliseconds(0))
+                            .Adapt(instance);
+
+            // ReSharper disable once NotAccessedVariable
+            // ReSharper disable once RedundantAssignment
+            await proxy.AsyncMethodCall(0, "zero");
+
+            // I hate to have to do this, but otherwise the second
+            // invocation may complete before the first invocation
+            // is added to cache.
+            Thread.Sleep(2000);
+
+            await proxy.AsyncMethodCall(0, "zero");
+
+            Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
+        }
     }
 }
