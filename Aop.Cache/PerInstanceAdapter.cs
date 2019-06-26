@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using Castle.DynamicProxy;
@@ -62,7 +62,7 @@ namespace Aop.Cache
                 {
                     invocation.Proceed();
 
-                    var cache = new Dictionary<string, (object invocationResult, DateTime invocationDateTime)>();
+                    var cache = new ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>();
 
                     addOrUpdateCache
                         .Invoke
@@ -73,7 +73,7 @@ namespace Aop.Cache
                         );
 
                     CachedInvocations
-                        .Add
+                        .TryAdd
                         (
                             expectation.Identifier,
                             cache
@@ -98,8 +98,8 @@ namespace Aop.Cache
                         )
                     );
 
-                var cache = new Dictionary<string, (object invocationResult, DateTime invocationDateTime)>();
-                CachedInvocations.Add(expectation.Identifier, cache);
+                var cache = new ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>();
+                CachedInvocations.TryAdd(expectation.Identifier, cache);
 
                 invocation.Proceed();
 

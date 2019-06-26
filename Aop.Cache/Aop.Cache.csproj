@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard1.3;net46</TargetFrameworks>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Authors>Will Axtell</Authors>
     <Description>Simple library for aspect oriented caching.</Description>
     <PackageProjectUrl>https://github.com/waxtell/Aop.Cache</PackageProjectUrl>
@@ -14,7 +14,8 @@
 [1.3.0] Support for instance centric caching
 [1.4.0] Per method caching now supports asynchronous methods
 [1.5.0] Per instance caching now supports asynchronous methods.
-[2.0.0] Separated configuration and instantiation to allow for better lifetime management (BREAKING CHANGE!)</PackageReleaseNotes>
+[2.0.0] Separated configuration and instantiation to allow for better lifetime management (BREAKING CHANGE!)
+[2.0.1] Better support for concurrency</PackageReleaseNotes>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
