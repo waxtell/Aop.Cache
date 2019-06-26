@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
-    using AddOrUpdateDelegate = Action<object, IDictionary<string, (object invocationResult, DateTime invocationDateTime)>, string>;
+    using AddOrUpdateDelegate = Action<object, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>, string>;
     using GetCachedResultDelegate = Func<object, object>;
 
     public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T> where T : class
@@ -198,7 +199,7 @@ namespace Aop.Cache
                 {
                     invocation.Proceed();
 
-                    var cache = new Dictionary<string, (object invocationResult, DateTime invocationDateTime)>();
+                    var cache = new ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>();
 
                     addOrUpdateCache
                         .Invoke
@@ -209,7 +210,7 @@ namespace Aop.Cache
                         );
 
                     CachedInvocations
-                        .Add
+                        .TryAdd
                         (
                             expectation.Identifier,
                             cache

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,7 +8,7 @@ using Castle.DynamicProxy;
 
 namespace Aop.Cache
 {
-    using AddOrUpdateDelegate = Action<object, IDictionary<string, (object invocationResult, DateTime invocationDateTime)>, string>;
+    using AddOrUpdateDelegate = Action<object, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>, string>;
     using GetCachedResultDelegate = Func<object, object>;
 
     public abstract class BaseAdapter<T> : IInterceptor where T : class
@@ -27,9 +28,9 @@ namespace Aop.Cache
                                 )
                             >();
 
-        protected readonly Dictionary<Guid, Dictionary<string, (object invocationResult, DateTime invocationDateTime)>> CachedInvocations = new Dictionary<Guid, Dictionary<string, (object invocationResult, DateTime invocationDateTime)>>();
+        protected readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>> CachedInvocations = new ConcurrentDictionary<Guid, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>>();
 
-        protected static void AddOrUpdate(IDictionary<string, (object invocationResult, DateTime invocationDateTime)> cache, string cacheKey, object result)
+        protected static void AddOrUpdate(ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)> cache, string cacheKey, object result)
         {
             cache[cacheKey] = (result, DateTime.UtcNow);
         }
