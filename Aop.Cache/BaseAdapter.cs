@@ -29,7 +29,12 @@ namespace Aop.Cache
                                 )
                             >();
 
-        protected readonly IMemoryCache MemCache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+        protected BaseAdapter(IMemoryCache memCache)
+        {
+            MemCache = memCache;
+        }
+
+        protected IMemoryCache MemCache { get; }
 
         protected static void AddOrUpdate(IMemoryCache cache, string cacheKey, object result, MemoryCacheEntryOptions options)
         {

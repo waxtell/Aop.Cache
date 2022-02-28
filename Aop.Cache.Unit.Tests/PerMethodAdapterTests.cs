@@ -1,190 +1,224 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Xunit;
 
-namespace Aop.Cache.Unit.Tests
+namespace Aop.Cache.Unit.Tests;
+
+public class PerMethodAdapterTests
 {
-    public class PerMethodAdapterTests
+    [Fact]
+    public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
     {
-        [Fact]
-        public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>().Adapt(instance);
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Adapt(instance);
 
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
 
-            Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
-        }
+        Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
+    }
 
-        [Fact]
-        public void MultipleCachedInvocationsYieldsSingleActualInvocation()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
-                            .Adapt(instance);
+    [Fact]
+    public void MultipleCachedInvocationsYieldsSingleActualInvocation()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+            .Adapt(instance);
 
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
 
-            Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
-        }
+        Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
+    }
 
-        [Fact]
-        public void ExpiredInvocationsYieldsMultipleInvocations()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>(_ => false))
-                            .Adapt(instance);
+    [Fact]
+    public void ExpiredInvocationsYieldsMultipleInvocations()
+    {
+        var source = new CancellationTokenSource(0);
+        var token = new CancellationChangeToken(source.Token);
 
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(1, "one");
-            proxy.MethodCall(2, "two");
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), While.Result.NotChanged(token))
+            .Adapt(instance);
 
-            Assert.Equal<uint>(4, instance.MethodCallInvocationCount);
-        }
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(1, "one");
+        proxy.MethodCall(2, "two");
 
-        [Fact]
-        public void MixedInvocationsYieldsMultipleInvocations()
-        {
-            var instance = new ForTestingPurposes();
+        Assert.Equal<uint>(4, instance.MethodCallInvocationCount);
+    }
 
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
-                            .Adapt(instance);
+    [Fact]
+    public void CancelChangeTokenRemovesCacheEntry()
+    {
+        var source = new CancellationTokenSource();
+        var token = new CancellationChangeToken(source.Token);
 
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(1, "one");
-            proxy.MethodCall(2, "two");
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), While.Result.NotChanged(token))
+            .Adapt(instance);
 
-            Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
-        }
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        source.Cancel();
+        proxy.MethodCall(0, "zero");
 
-        [Fact]
-        public void MixedFuzzyInvocationsYieldsMultipleInvocations()
-        {
-            var instance = new ForTestingPurposes();
+        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
+    }
 
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Adapt(instance);
+    [Fact]
+    public void MixedInvocationsYieldsMultipleInvocations()
+    {
+        var instance = new ForTestingPurposes();
 
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(1, "zero");
-            proxy.MethodCall(1, "zero");
-            proxy.MethodCall(2, "zero");
-            proxy.MethodCall(2, "zero");
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+            .Adapt(instance);
 
-            Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
-        }
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(1, "one");
+        proxy.MethodCall(2, "two");
 
-        [Fact]
-        public void MultipleCacheExpectationsYieldExpectedResult()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Adapt(instance);
+        Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
+    }
 
-            proxy.MethodCall(0, "zero");
-            var result0 = proxy.MethodCall(0, "zero");
+    [Fact]
+    public void MixedFuzzyInvocationsYieldsMultipleInvocations()
+    {
+        var instance = new ForTestingPurposes();
 
-            proxy.MethodCall(1, "zero");
-            var result1 = proxy.MethodCall(1, "zero");
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+            .Adapt(instance);
 
-            Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
-            Assert.Equal("0zero", result0);
-            Assert.Equal("1zero", result1);
-        }
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(1, "zero");
+        proxy.MethodCall(1, "zero");
+        proxy.MethodCall(2, "zero");
+        proxy.MethodCall(2, "zero");
 
-        [Fact]
-        public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Adapt(instance);
+        Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
+    }
 
-            _ = await proxy.AsyncMethodCall(0, "zero");
+    [Fact]
+    public void MultipleCacheExpectationsYieldExpectedResult()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+            .Adapt(instance);
 
-            // I hate to have to do this, but otherwise the second
-            // invocation may complete before the first invocation
-            // is added to cache.
-            Thread.Sleep(2000);
+        proxy.MethodCall(0, "zero");
+        var result0 = proxy.MethodCall(0, "zero");
 
-            var result = await proxy.AsyncMethodCall(0, "zero");
+        proxy.MethodCall(1, "zero");
+        var result1 = proxy.MethodCall(1, "zero");
 
-            Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
-            Assert.Equal("0zero", result);
-        }
+        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
+        Assert.Equal("0zero", result0);
+        Assert.Equal("1zero", result1);
+    }
 
-        [Fact]
-        public void ClassProxyTargetOnlyVirtualMethodsAreCached()
-        {
-            var instance = new ForTestingPurposes();
+    [Fact]
+    public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
+            .Adapt(instance);
 
-            var proxy = new PerMethodAdapter<ForTestingPurposes>()
-                            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), For.Ever())
-                            .Adapt(instance);
+        _ = await proxy.AsyncMethodCall(0, "zero");
 
-            proxy.MethodCall(0, "zero");
-            proxy.MethodCall(0, "zero");
-            proxy.VirtualMethodCall(0, "zero");
-            proxy.VirtualMethodCall(0, "zero");
+        // I hate to have to do this, but otherwise the second
+        // invocation may complete before the first invocation
+        // is added to cache.
+        Thread.Sleep(2000);
 
-            Assert.Equal<uint>(2, proxy.MethodCallInvocationCount);
-            Assert.Equal<uint>(1, instance.VirtualMethodCallInvocationCount);
-            Assert.Equal<uint>(0, instance.MethodCallInvocationCount);
-        }
+        var result = await proxy.AsyncMethodCall(0, "zero");
 
-        [Fact]
-        public void MultipleMemberInvocationsYieldsSingleInvocation()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.Member, For.Ever())
-                            .Adapt(instance);
+        Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
+        Assert.Equal("0zero", result);
+    }
 
-            proxy.Member = "test";
+    [Fact]
+    public void ClassProxyTargetOnlyVirtualMethodsAreCached()
+    {
+        var instance = new ForTestingPurposes();
 
-            _ = proxy.Member;
+        var proxy = new PerMethodAdapter<ForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+            .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), For.Ever())
+            .Adapt(instance);
 
-            instance.Member = "not equal to test";
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.VirtualMethodCall(0, "zero");
+        proxy.VirtualMethodCall(0, "zero");
 
-            var result = proxy.Member;
+        Assert.Equal<uint>(2, proxy.MethodCallInvocationCount);
+        Assert.Equal<uint>(1, instance.VirtualMethodCallInvocationCount);
+        Assert.Equal<uint>(0, instance.MethodCallInvocationCount);
+    }
 
-            Assert.Equal<uint>(1, instance.MemberGetInvocationCount);
-            Assert.Equal("test", result);
-        }
+    [Fact]
+    public void MultipleMemberInvocationsYieldsSingleInvocation()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.Member, For.Ever())
+            .Adapt(instance);
 
-        [Fact]
-        public async Task ExpiredResultYieldsMultipleActualInvocations()
-        {
-            var instance = new ForTestingPurposes();
-            var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Result.True<string>(_ => false))
-                            .Adapt(instance);
+        proxy.Member = "test";
 
-            _ = await proxy.AsyncMethodCall(0, "zero");
+        _ = proxy.Member;
 
-            // I hate to have to do this, but otherwise the second
-            // invocation may complete before the first invocation
-            // is added to cache.
-            Thread.Sleep(2000);
+        instance.Member = "not equal to test";
 
-            await proxy.AsyncMethodCall(0, "zero");
+        var result = proxy.Member;
 
-            Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
-        }
+        Assert.Equal<uint>(1, instance.MemberGetInvocationCount);
+        Assert.Equal("test", result);
+    }
+
+    [Fact]
+    public async Task ExpiredResultYieldsMultipleActualInvocations()
+    {
+        var source = new CancellationTokenSource(0);
+        var token = new CancellationChangeToken(source.Token);
+
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Result.NotChanged(token))
+            .Adapt(instance);
+
+        _ = await proxy.AsyncMethodCall(0, "zero");
+
+        // I hate to have to do this, but otherwise the second
+        // invocation may complete before the first invocation
+        // is added to cache.
+        Thread.Sleep(2000);
+
+        await proxy.AsyncMethodCall(0, "zero");
+
+        Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
+    }
+
+    public static IMemoryCache CacheFactory()
+    {
+        return 
+            new MemoryCache(Options.Create(new MemoryCacheOptions()));
     }
 }

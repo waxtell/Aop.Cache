@@ -1,19 +1,22 @@
 ﻿using System;
-using System.Linq.Expressions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 
 namespace Aop.Cache.ExpirationManagement
 {
     public class Result
     {
-        public MemoryCacheEntryOptions True<T>(Func<T, bool> delegateExpression)
+        public Func<IMemoryCache, string, MemoryCacheEntryOptions> NotChanged(IChangeToken changeToken)
         {
-            Expression<Func<T, bool>> expr = i => !delegateExpression(i);
+            return 
+                (cache, key) =>
+                {
+                    var options = new MemoryCacheEntryOptions();
+                    changeToken.RegisterChangeCallback(_ => cache.Remove(key), null);
+                    options.ExpirationTokens.Add(changeToken);
 
-            var mceo = new MemoryCacheEntryOptions();
-            mceo.ExpirationTokens.Add(new CacheStuff<T>(expr.Compile()));
-
-            return mceo;
+                    return options;
+                };
         }
     }
 }

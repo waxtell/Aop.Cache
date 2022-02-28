@@ -8,30 +8,35 @@ using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
-    using AddOrUpdateDelegate = Action<object, MemoryCache, string, MemoryCacheEntryOptions>;
+    using AddOrUpdateDelegate = Action<object, IMemoryCache, string, MemoryCacheEntryOptions>;
     using GetCachedResultDelegate = Func<object, object>;
 
-    public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T> where T : class
+    public sealed class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T> where T : class
     {
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target, MemoryCacheEntryOptions options)
+        public PerMethodAdapter(IMemoryCache memCache)
+            : base(memCache)
+        {
+        }
+
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
             return 
                 Cache
                 (
                     target, 
-                    options, 
+                    optionsFactory, 
                     BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>(),
                     BuildGetFromCacheDelegateForAsynchronousFunc<TReturn>()
                 );
         }
 
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, MemoryCacheEntryOptions options)
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
             return 
                 Cache
                 (
                     target, 
-                    options,
+                    optionsFactory,
                     BuildDefaultAddOrUpdateDelegate(),
                     BuildDefaultGetFromCacheDelegate()
                 );
@@ -39,8 +44,8 @@ namespace Aop.Cache
 
         private void Cache
             (
-                MethodCallExpression expression, 
-                MemoryCacheEntryOptions options,
+                MethodCallExpression expression,
+                Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory,
                 AddOrUpdateDelegate addOrUpdateCacheDelegate,
                 GetCachedResultDelegate getFromCacheDelegate
             )
@@ -53,7 +58,7 @@ namespace Aop.Cache
                             .FromMethodCallExpression
                             (
                                 expression, 
-                                options
+                                optionsFactory
                             ),
                         addOrUpdateCacheDelegate,
                         getFromCacheDelegate
@@ -64,7 +69,7 @@ namespace Aop.Cache
         private void Cache
             (
                 MemberExpression expression,
-                MemoryCacheEntryOptions options,
+                Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory,
                 AddOrUpdateDelegate addOrUpdateCacheDelegate,
                 GetCachedResultDelegate getFromCacheDelegate
             )
@@ -77,7 +82,7 @@ namespace Aop.Cache
                             .FromMemberAccessExpression
                             (
                                 expression, 
-                                options
+                                optionsFactory
                             ),
                         addOrUpdateCacheDelegate,
                         getFromCacheDelegate
@@ -88,7 +93,7 @@ namespace Aop.Cache
         private IPerMethodAdapter<T> Cache<TReturn>
             (
                 Expression<Func<T, TReturn>> target,
-                MemoryCacheEntryOptions options,
+                Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory,
                 AddOrUpdateDelegate addOrUpdateCacheDelegate,
                 GetCachedResultDelegate getFromCacheDelegate
             )
@@ -98,7 +103,7 @@ namespace Aop.Cache
             switch (target.Body)
             {
                 case MemberExpression memberExpression:
-                    Cache(memberExpression, options, addOrUpdateCacheDelegate, getFromCacheDelegate);
+                    Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, getFromCacheDelegate);
                     return this;
 
                 case UnaryExpression unaryExpression:
@@ -108,7 +113,7 @@ namespace Aop.Cache
 
             expression = expression ?? target.Body as MethodCallExpression;
 
-            Cache(expression, options, addOrUpdateCacheDelegate,getFromCacheDelegate);
+            Cache(expression, optionsFactory, addOrUpdateCacheDelegate,getFromCacheDelegate);
 
             return this;
         }
@@ -129,25 +134,7 @@ namespace Aop.Cache
 
                 if (MemCache.TryGetValue(cacheKey, out var cachedValue))
                 {
-                    var val = getFromCache.Invoke(cachedValue);
-
-                    if (expectation.IsExpired(val))
-                    {
-                        invocation.Proceed();
-
-                        addOrUpdateCache
-                            .Invoke
-                            (
-                                invocation.ReturnValue,
-                                MemCache,
-                                cacheKey,
-                                expectation.Options
-                            );
-                    }
-                    else
-                    {
-                        invocation.ReturnValue = val;
-                    }
+                    invocation.ReturnValue = getFromCache.Invoke(cachedValue);
                 }
                 else
                 {
@@ -159,7 +146,7 @@ namespace Aop.Cache
                             invocation.ReturnValue, 
                             MemCache, 
                             cacheKey,
-                            expectation.Options
+                            expectation.OptionsFactory.Invoke(MemCache, cacheKey)
                         );
                 }
             }

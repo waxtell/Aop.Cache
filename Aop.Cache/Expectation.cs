@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Primitives;
 
 namespace Aop.Cache
 {
@@ -17,16 +15,16 @@ namespace Aop.Cache
         private readonly string _methodName;
         private readonly Type _returnType;
         private readonly IEnumerable<Parameter> _parameters;
-        public MemoryCacheEntryOptions Options { get; }
+        public Func<IMemoryCache,string,MemoryCacheEntryOptions> OptionsFactory { get; }
 
-        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, MemoryCacheEntryOptions options)
+        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
             Identifier = Guid.NewGuid();
 
             _methodName = methodName;
             _returnType = returnType;
             _parameters = parameters;
-            Options = options;
+            OptionsFactory = optionsFactory;
         }
 
         private static Parameter ToParameter(Expression element)
@@ -61,18 +59,18 @@ namespace Aop.Cache
                     );
         }
 
-        public static Expectation FromMethodCallExpression(MethodCallExpression expression, MemoryCacheEntryOptions options)
+        public static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
             return new Expectation
             (
                 expression.Method.Name,
                 expression.Method.ReturnType,
                 expression.Arguments.Select(ToParameter).ToArray(),
-                options
+                optionsFactory
             );
         }
 
-        public static Expectation FromMemberAccessExpression(MemberExpression expression, MemoryCacheEntryOptions options)
+        public static Expectation FromMemberAccessExpression(MemberExpression expression, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
             var propertyInfo = (PropertyInfo) expression.Member;
 
@@ -81,28 +79,19 @@ namespace Aop.Cache
                 propertyInfo.GetMethod.Name,
                 propertyInfo.PropertyType,
                 new List<Parameter>(), 
-                options
+                optionsFactory
             );
         }
 
-        public static Expectation FromInvocation(IInvocation invocation, MemoryCacheEntryOptions options)
+        public static Expectation FromInvocation(IInvocation invocation, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
             return new Expectation
             (
                 invocation.MethodInvocationTarget.Name,
                 invocation.MethodInvocationTarget.ReturnType,
                 invocation.Arguments.Select(Parameter.MatchExact),
-                options
+                optionsFactory
             );
-        }
-
-        public bool IsExpired(object cachedValue)
-        {
-            return 
-                Options
-                    .ExpirationTokens
-                    .OfType<ICacheChangeToken>()
-                    .Aggregate(false, (current, item) => current || item.IsExpired(cachedValue));
         }
 
         public bool IsHit(IInvocation invocation)
@@ -138,44 +127,5 @@ namespace Aop.Cache
 
             return true;
         }
-    }
-
-    public interface ICacheChangeToken : IChangeToken
-    {
-        bool IsExpired(object instance);
-    }
-
-    public class CacheStuff<T> : ICacheChangeToken
-    {
-        private CancellationTokenSource _source;
-        private CancellationChangeToken _token;
-        private readonly Func<T, bool> _monitor;
-
-        public CacheStuff(Func<T, bool> monitor)
-        {
-            _source = new CancellationTokenSource();
-            _token = new CancellationChangeToken(_source.Token);
-            _monitor = monitor;
-        }
-
-        public IDisposable RegisterChangeCallback(Action<object> callback, object state)
-        {
-            return _token.RegisterChangeCallback(callback, state);
-        }
-
-        public bool IsExpired(object instance)
-        {
-            if (_monitor.Invoke((T) instance))
-            {
-                _source.Cancel();
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool HasChanged => _token.HasChanged;
-
-        public bool ActiveChangeCallbacks => _token.ActiveChangeCallbacks;
     }
 }
