@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
+using Aop.Cache.Extensions;
 
 namespace Aop.Cache
 {
@@ -130,7 +130,7 @@ namespace Aop.Cache
 
             if (expectation != null)
             {
-                var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
+                var cacheKey = invocation.ToKey();
 
                 if (MemCache.TryGetValue(cacheKey, out var cachedValue))
                 {

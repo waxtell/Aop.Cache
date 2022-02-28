@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
+using Aop.Cache.Extensions;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
@@ -19,7 +19,7 @@ namespace Aop.Cache
             }
 
             var (expectation, addOrUpdateCache, getFromCache) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
-            var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
+            var cacheKey = invocation.ToKey();
 
             if (expectation != null)
             {

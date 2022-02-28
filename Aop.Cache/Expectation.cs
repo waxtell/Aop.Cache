@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
