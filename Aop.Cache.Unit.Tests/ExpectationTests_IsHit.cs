@@ -13,7 +13,7 @@ namespace Aop.Cache.Unit.Tests
         public void SignatureMatchYieldsHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 
@@ -33,7 +33,7 @@ namespace Aop.Cache.Unit.Tests
         public void FuzzyMatchYieldsHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(It.IsAny<int>(), "zero");
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 
@@ -53,7 +53,7 @@ namespace Aop.Cache.Unit.Tests
         public void NotNullExpectationNotNullValueYieldsHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, It.IsNotNull<string>());
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 
@@ -73,7 +73,7 @@ namespace Aop.Cache.Unit.Tests
         public void NotNullExpectationNullParameterYieldsNoHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, It.IsNotNull<string>());
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 
@@ -93,7 +93,7 @@ namespace Aop.Cache.Unit.Tests
         public void ReturnTypeMismatchYieldsNoHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 
@@ -113,7 +113,7 @@ namespace Aop.Cache.Unit.Tests
         public void ParameterMismatchYieldsNoHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 
@@ -133,7 +133,7 @@ namespace Aop.Cache.Unit.Tests
         public void MethodNameMismatchYieldsNoHit()
         {
             Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
-            var expiration = While.Result.True<object>((i, dt) => true);
+            var expiration = While.Result.True<object>(_ => true);
 
             var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, expiration);
 

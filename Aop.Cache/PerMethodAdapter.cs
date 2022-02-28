@@ -1,71 +1,37 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
-    using AddOrUpdateDelegate = Action<object, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>, string>;
+    using AddOrUpdateDelegate = Action<object, MemoryCache, string, MemoryCacheEntryOptions>;
     using GetCachedResultDelegate = Func<object, object>;
 
     public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T> where T : class
     {
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target,
-            Func<TReturn, DateTime, bool> expirationDelegate)
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target, MemoryCacheEntryOptions options)
         {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
-
             return 
                 Cache
                 (
                     target, 
-                    expr.Compile(), 
+                    options, 
                     BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>(),
                     BuildGetFromCacheDelegateForAsynchronousFunc<TReturn>()
                 );
         }
 
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target, Func<DateTime, bool> expirationDelegate)
+        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, MemoryCacheEntryOptions options)
         {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
-
-            return
-                Cache
-                (
-                    target,
-                    expr.Compile(),
-                    BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>(),
-                    BuildGetFromCacheDelegateForAsynchronousFunc<TReturn>()
-                );
-        }
-
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<TReturn, DateTime, bool> expirationDelegate)
-        {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate((TReturn)i, d);
-
             return 
                 Cache
                 (
                     target, 
-                    expr.Compile(),
-                    BuildDefaultAddOrUpdateDelegate(),
-                    BuildDefaultGetFromCacheDelegate()
-                );
-        }
-
-        public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<DateTime, bool> expirationDelegate)
-        {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
-
-            return 
-                Cache
-                (
-                    target, 
-                    expr.Compile(), 
+                    options,
                     BuildDefaultAddOrUpdateDelegate(),
                     BuildDefaultGetFromCacheDelegate()
                 );
@@ -74,7 +40,7 @@ namespace Aop.Cache
         private void Cache
             (
                 MethodCallExpression expression, 
-                Func<object, DateTime, bool> expirationDelegate,
+                MemoryCacheEntryOptions options,
                 AddOrUpdateDelegate addOrUpdateCacheDelegate,
                 GetCachedResultDelegate getFromCacheDelegate
             )
@@ -87,7 +53,7 @@ namespace Aop.Cache
                             .FromMethodCallExpression
                             (
                                 expression, 
-                                expirationDelegate
+                                options
                             ),
                         addOrUpdateCacheDelegate,
                         getFromCacheDelegate
@@ -97,8 +63,8 @@ namespace Aop.Cache
 
         private void Cache
             (
-                MemberExpression expression, 
-                Func<object, DateTime, bool> expirationDelegate,
+                MemberExpression expression,
+                MemoryCacheEntryOptions options,
                 AddOrUpdateDelegate addOrUpdateCacheDelegate,
                 GetCachedResultDelegate getFromCacheDelegate
             )
@@ -111,7 +77,7 @@ namespace Aop.Cache
                             .FromMemberAccessExpression
                             (
                                 expression, 
-                                expirationDelegate
+                                options
                             ),
                         addOrUpdateCacheDelegate,
                         getFromCacheDelegate
@@ -121,8 +87,8 @@ namespace Aop.Cache
 
         private IPerMethodAdapter<T> Cache<TReturn>
             (
-                Expression<Func<T, TReturn>> target, 
-                Func<object,DateTime,bool> expirationDelegate,
+                Expression<Func<T, TReturn>> target,
+                MemoryCacheEntryOptions options,
                 AddOrUpdateDelegate addOrUpdateCacheDelegate,
                 GetCachedResultDelegate getFromCacheDelegate
             )
@@ -132,7 +98,7 @@ namespace Aop.Cache
             switch (target.Body)
             {
                 case MemberExpression memberExpression:
-                    Cache(memberExpression, expirationDelegate,addOrUpdateCacheDelegate,getFromCacheDelegate);
+                    Cache(memberExpression, options, addOrUpdateCacheDelegate, getFromCacheDelegate);
                     return this;
 
                 case UnaryExpression unaryExpression:
@@ -142,7 +108,7 @@ namespace Aop.Cache
 
             expression = expression ?? target.Body as MethodCallExpression;
 
-            Cache(expression, expirationDelegate, addOrUpdateCacheDelegate,getFromCacheDelegate);
+            Cache(expression, options, addOrUpdateCacheDelegate,getFromCacheDelegate);
 
             return this;
         }
@@ -161,59 +127,39 @@ namespace Aop.Cache
             {
                 var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
 
-                if (CachedInvocations.TryGetValue(expectation.Identifier, out var cachedInvocation))
+                if (MemCache.TryGetValue(cacheKey, out var cachedValue))
                 {
-                    if (cachedInvocation.TryGetValue(cacheKey, out var cachedValue))
-                    {
-                        if (expectation.IsExpired(cachedValue.invocationResult, cachedValue.invocationDateTime))
-                        {
-                            invocation.Proceed();
+                    var val = getFromCache.Invoke(cachedValue);
 
-                            addOrUpdateCache
-                                .Invoke
-                                (
-                                    invocation.ReturnValue, 
-                                    cachedInvocation, 
-                                    cacheKey
-                                );
-                        }
-                        else
-                        {
-                            invocation.ReturnValue = getFromCache.Invoke(cachedValue.invocationResult);
-                        }
-                    }
-                    else
+                    if (expectation.IsExpired(val))
                     {
                         invocation.Proceed();
 
                         addOrUpdateCache
                             .Invoke
                             (
-                                invocation.ReturnValue, 
-                                cachedInvocation, 
-                                cacheKey
+                                invocation.ReturnValue,
+                                MemCache,
+                                cacheKey,
+                                expectation.Options
                             );
+                    }
+                    else
+                    {
+                        invocation.ReturnValue = val;
                     }
                 }
                 else
                 {
                     invocation.Proceed();
 
-                    var cache = new ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>();
-
                     addOrUpdateCache
                         .Invoke
                         (
-                            invocation.ReturnValue,
-                            cache,
-                            cacheKey
-                        );
-
-                    CachedInvocations
-                        .TryAdd
-                        (
-                            expectation.Identifier,
-                            cache
+                            invocation.ReturnValue, 
+                            MemCache, 
+                            cacheKey,
+                            expectation.Options
                         );
                 }
             }

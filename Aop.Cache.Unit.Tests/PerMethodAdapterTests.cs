@@ -40,7 +40,7 @@ namespace Aop.Cache.Unit.Tests
         {
             var instance = new ForTestingPurposes();
             var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>((result, dt) => false))
+                            .Cache(x => x.MethodCall(0, "zero"), While.Result.True<string>(_ => false))
                             .Adapt(instance);
 
             proxy.MethodCall(0, "zero");
@@ -114,18 +114,16 @@ namespace Aop.Cache.Unit.Tests
                             .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
                             .Adapt(instance);
 
-            // ReSharper disable once NotAccessedVariable
-            // ReSharper disable once RedundantAssignment
-            var result = await proxy.AsyncMethodCall(0, "zero");
+            _ = await proxy.AsyncMethodCall(0, "zero");
 
             // I hate to have to do this, but otherwise the second
             // invocation may complete before the first invocation
             // is added to cache.
             Thread.Sleep(2000);
 
-            result = await proxy.AsyncMethodCall(0, "zero");
+            var result = await proxy.AsyncMethodCall(0, "zero");
 
-            Assert.Equal<uint>(1,instance.AsyncMethodCallInvocationCount);
+            Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
             Assert.Equal("0zero", result);
         }
 
@@ -141,7 +139,7 @@ namespace Aop.Cache.Unit.Tests
 
             proxy.MethodCall(0, "zero");
             proxy.MethodCall(0, "zero");
-            proxy.VirtualMethodCall(0,"zero");
+            proxy.VirtualMethodCall(0, "zero");
             proxy.VirtualMethodCall(0, "zero");
 
             Assert.Equal<uint>(2, proxy.MethodCallInvocationCount);
@@ -158,12 +156,12 @@ namespace Aop.Cache.Unit.Tests
                             .Adapt(instance);
 
             proxy.Member = "test";
-            // ReSharper disable once RedundantAssignment
-            var result = proxy.Member;
+
+            _ = proxy.Member;
 
             instance.Member = "not equal to test";
 
-            result = proxy.Member;
+            var result = proxy.Member;
 
             Assert.Equal<uint>(1, instance.MemberGetInvocationCount);
             Assert.Equal("test", result);
@@ -174,12 +172,10 @@ namespace Aop.Cache.Unit.Tests
         {
             var instance = new ForTestingPurposes();
             var proxy = new PerMethodAdapter<IForTestingPurposes>()
-                            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Result.True<string>((s, dt) => false))
+                            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Result.True<string>(_ => false))
                             .Adapt(instance);
 
-            // ReSharper disable once NotAccessedVariable
-            // ReSharper disable once RedundantAssignment
-            await proxy.AsyncMethodCall(0, "zero");
+            _ = await proxy.AsyncMethodCall(0, "zero");
 
             // I hate to have to do this, but otherwise the second
             // invocation may complete before the first invocation

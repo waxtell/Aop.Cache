@@ -1,30 +1,51 @@
-﻿using System;
+﻿using Microsoft.Extensions.Caching.Memory;
+using System;
 
 namespace Aop.Cache.ExpirationManagement
 {
     public static class For
     {
-        public static Func<DateTime, bool> Milliseconds(int numMilliseconds)
+        public static MemoryCacheEntryOptions Milliseconds(int numMilliseconds)
         {
-            return (dt) => DateTime.UtcNow > dt.AddMilliseconds(numMilliseconds);
-        }
-        public static Func<DateTime, bool> Seconds(int numSeconds)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddSeconds(numSeconds);
-        }
-
-        public static Func<DateTime, bool> Minutes(int numMinutes)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddMinutes(numMinutes);
-        }
-        public static Func<DateTime, bool> Hours(int numHours)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddHours(numHours);
+            return 
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(numMilliseconds)
+                };
         }
 
-        public static Func<DateTime, bool> Ever()
+        public static MemoryCacheEntryOptions Seconds(int numSeconds)
         {
-            return (dt) => false;
+            return
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(numSeconds)
+                };
+        }
+
+        public static MemoryCacheEntryOptions Minutes(int numMinutes)
+        {
+            return
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(numMinutes)
+                };
+        }
+
+        public static MemoryCacheEntryOptions Hours(int numHours)
+        {
+            return
+                new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(numHours)
+                };
+        }
+
+        public static MemoryCacheEntryOptions Ever()
+        {
+            return
+                new MemoryCacheEntryOptions();
+
         }
     }
 }

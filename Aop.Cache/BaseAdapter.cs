@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace Aop.Cache
 {
-    using AddOrUpdateDelegate = Action<object, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>, string>;
+    using AddOrUpdateDelegate = Action<object, IMemoryCache, string, MemoryCacheEntryOptions>;
     using GetCachedResultDelegate = Func<object, object>;
 
     public abstract class BaseAdapter<T> : IInterceptor where T : class
@@ -28,11 +29,11 @@ namespace Aop.Cache
                                 )
                             >();
 
-        protected readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>> CachedInvocations = new ConcurrentDictionary<Guid, ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>>();
+        protected readonly IMemoryCache MemCache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
 
-        protected static void AddOrUpdate(ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)> cache, string cacheKey, object result)
+        protected static void AddOrUpdate(IMemoryCache cache, string cacheKey, object result, MemoryCacheEntryOptions options)
         {
-            cache[cacheKey] = (result, DateTime.UtcNow);
+            cache.Set(cacheKey, result, options);
         }
 
         protected static GetCachedResultDelegate BuildDefaultGetFromCacheDelegate()
@@ -53,10 +54,10 @@ namespace Aop.Cache
         protected static AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>()
         {
             Expression<AddOrUpdateDelegate> expr =
-                (returnValue, cache, cacheKey) => (returnValue as Task<TReturn>)
+                (returnValue, cache, cacheKey, memoryCacheEntryOptions) => (returnValue as Task<TReturn>)
                                                     .ContinueWith
                                                     (
-                                                        i => AddOrUpdate(cache, cacheKey, i.Result)
+                                                        i => AddOrUpdate(cache, cacheKey, i.Result, memoryCacheEntryOptions)
                                                     );
 
             return expr.Compile();
@@ -65,7 +66,7 @@ namespace Aop.Cache
         protected static AddOrUpdateDelegate BuildDefaultAddOrUpdateDelegate()
         {
             Expression<AddOrUpdateDelegate> expr =
-                (returnValue, cache, cacheKey) => AddOrUpdate(cache, cacheKey, returnValue);
+                (returnValue, cache, cacheKey, memoryCacheEntryOptions) => AddOrUpdate(cache, cacheKey, returnValue, memoryCacheEntryOptions);
 
             return expr.Compile();
         }
