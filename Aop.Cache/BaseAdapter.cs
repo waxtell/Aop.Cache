@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace Aop.Cache
 {

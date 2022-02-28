@@ -47,8 +47,8 @@ public class PerMethodAdapterTests
 
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(0, "zero"), While.Result.NotChanged(token))
-            .Adapt(instance);
+                        .Cache(x => x.MethodCall(0, "zero"), While.Token.NotChanged(token))
+                        .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
         proxy.MethodCall(0, "zero");
@@ -66,8 +66,8 @@ public class PerMethodAdapterTests
 
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(0, "zero"), While.Result.NotChanged(token))
-            .Adapt(instance);
+                        .Cache(x => x.MethodCall(0, "zero"), While.Token.NotChanged(token))
+                        .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
         proxy.MethodCall(0, "zero");
@@ -83,8 +83,8 @@ public class PerMethodAdapterTests
         var instance = new ForTestingPurposes();
 
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
-            .Adapt(instance);
+                        .Cache(x => x.MethodCall(0, "zero"), For.Ever())
+                        .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
         proxy.MethodCall(0, "zero");
@@ -100,8 +100,8 @@ public class PerMethodAdapterTests
         var instance = new ForTestingPurposes();
 
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-            .Adapt(instance);
+                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                        .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
         proxy.MethodCall(0, "zero");
@@ -118,8 +118,8 @@ public class PerMethodAdapterTests
     {
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-            .Adapt(instance);
+                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                        .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
         var result0 = proxy.MethodCall(0, "zero");
@@ -137,8 +137,8 @@ public class PerMethodAdapterTests
     {
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
-            .Adapt(instance);
+                        .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                        .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
 
@@ -159,9 +159,9 @@ public class PerMethodAdapterTests
         var instance = new ForTestingPurposes();
 
         var proxy = new PerMethodAdapter<ForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
-            .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), For.Ever())
-            .Adapt(instance);
+                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                        .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                        .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
         proxy.MethodCall(0, "zero");
@@ -178,8 +178,8 @@ public class PerMethodAdapterTests
     {
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.Member, For.Ever())
-            .Adapt(instance);
+                        .Cache(x => x.Member, For.Ever())
+                        .Adapt(instance);
 
         proxy.Member = "test";
 
@@ -201,7 +201,7 @@ public class PerMethodAdapterTests
 
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Result.NotChanged(token))
+            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Token.NotChanged(token))
             .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");

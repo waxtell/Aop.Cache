@@ -111,7 +111,7 @@ namespace Aop.Cache
                     break;
             }
 
-            expression = expression ?? target.Body as MethodCallExpression;
+            expression ??= target.Body as MethodCallExpression;
 
             Cache(expression, optionsFactory, addOrUpdateCacheDelegate,getFromCacheDelegate);
 

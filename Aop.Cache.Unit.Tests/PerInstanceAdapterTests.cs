@@ -58,7 +58,6 @@ public class PerInstanceAdapterTests
     }
 
     [Fact]
-    [SuppressMessage("ReSharper", "AssignmentIsFullyDiscarded")]
     public void MultipleDistinctCachedMemberInvocationsYieldsSingleActualInvocation()
     {
         var instance = new ForTestingPurposes();

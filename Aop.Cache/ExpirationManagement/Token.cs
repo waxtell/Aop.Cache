@@ -4,7 +4,7 @@ using Microsoft.Extensions.Primitives;
 
 namespace Aop.Cache.ExpirationManagement
 {
-    public class Result
+    public class Token
     {
         public Func<IMemoryCache, string, MemoryCacheEntryOptions> NotChanged(IChangeToken changeToken)
         {

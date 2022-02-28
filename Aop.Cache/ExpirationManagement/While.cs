@@ -2,6 +2,6 @@
 {
     public static class While
     {
-        public static Result Result => new Result();
+        public static Token Token => new Token();
     }
 }

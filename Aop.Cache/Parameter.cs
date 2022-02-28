@@ -37,17 +37,12 @@ namespace Aop.Cache
 
         public bool IsMatch(object value)
         {
-            if (_precision == MatchPrecision.Any)
+            return _precision switch
             {
-                return true;
-            }
-
-            if (_precision == MatchPrecision.NotNull)
-            {
-                return value != null;
-            }
-
-            return JsonConvert.SerializeObject(value) == _serializedValue;
+                MatchPrecision.Any => true,
+                MatchPrecision.NotNull => value != null,
+                _ => JsonConvert.SerializeObject(value) == _serializedValue
+            };
         }
     }
 }

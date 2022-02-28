@@ -34,17 +34,14 @@ namespace Aop.Cache
                 return Parameter.MatchExact(expression.Value);
             }
 
-            if (element is MethodCallExpression methodCall)
+            if (element is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(It))
             {
-                if (methodCall.Method.DeclaringType == typeof(It))
+                switch (methodCall.Method.Name)
                 {
-                    switch (methodCall.Method.Name)
-                    {
-                        case nameof(It.IsAny):
-                            return Parameter.MatchAny();
-                        case nameof(It.IsNotNull):
-                            return Parameter.MatchNotNull();
-                    }
+                    case nameof(It.IsAny):
+                        return Parameter.MatchAny();
+                    case nameof(It.IsNotNull):
+                        return Parameter.MatchNotNull();
                 }
             }
 
