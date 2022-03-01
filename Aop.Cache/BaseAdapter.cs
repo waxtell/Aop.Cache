@@ -10,6 +10,7 @@ using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Aop.Cache;
+
 public abstract class BaseAdapter<T> : IInterceptor where T : class
 {
     protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, GetCachedResultDelegate getFromCacheDelegate)> Expectations = new();
