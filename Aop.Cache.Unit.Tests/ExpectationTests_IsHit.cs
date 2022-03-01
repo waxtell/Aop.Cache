@@ -22,6 +22,7 @@ public class ExpectationTests
         methodInfo.Setup(x => x.Name).Returns("MethodCall");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 0, "zero" });
 
@@ -40,7 +41,7 @@ public class ExpectationTests
 
         methodInfo.Setup(x => x.Name).Returns("MethodCall");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
-
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 42, "zero" });
 
@@ -60,6 +61,7 @@ public class ExpectationTests
         methodInfo.Setup(x => x.Name).Returns("MethodCall");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 0, "zero" });
 
@@ -79,6 +81,7 @@ public class ExpectationTests
         methodInfo.Setup(x => x.Name).Returns("MethodCall");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 42, null });
 
@@ -98,6 +101,7 @@ public class ExpectationTests
         methodInfo.Setup(x => x.Name).Returns("MethodCall");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(int));
 
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 0, "zero" });
 
@@ -117,6 +121,7 @@ public class ExpectationTests
         methodInfo.Setup(x => x.Name).Returns("MethodCall");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 1, "zero" });
 
@@ -136,6 +141,7 @@ public class ExpectationTests
         methodInfo.Setup(x => x.Name).Returns("DoOtherStuff");
         methodInfo.Setup(x => x.ReturnType).Returns(typeof(string));
 
+        invocation.Setup(x => x.TargetType).Returns(typeof(ForTestingPurposes));
         invocation.Setup(x => x.Method).Returns(methodInfo.Object);
         invocation.Setup(x => x.Arguments).Returns(new object[] { 0, "zero" });
 

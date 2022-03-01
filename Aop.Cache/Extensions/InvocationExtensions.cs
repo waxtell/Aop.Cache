@@ -13,7 +13,8 @@ namespace Aop.Cache.Extensions
                     (
                         new
                         {
-                            invocation.Method.Name,
+                            TypeName = invocation.InvocationTarget.GetType().Name,
+                            MethodName = invocation.Method.Name,
                             ReturnType = invocation.Method.ReturnType.Name,
                             invocation.Arguments
                         }

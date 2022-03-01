@@ -37,7 +37,7 @@ namespace Aop.Cache
                             invocation.ReturnValue,
                             MemCache,
                             cacheKey,
-                            expectation.OptionsFactory.Invoke(MemCache, cacheKey)
+                            expectation.GetCacheEntryOptions(MemCache, cacheKey)
                         );
                 }
             }
@@ -67,7 +67,7 @@ namespace Aop.Cache
                         invocation.ReturnValue,
                         MemCache,
                         cacheKey,
-                        expectation.OptionsFactory.Invoke(MemCache, cacheKey)
+                        expectation.GetCacheEntryOptions(MemCache, cacheKey)
                     );
             }
         }

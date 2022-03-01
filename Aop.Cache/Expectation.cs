@@ -5,27 +5,25 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
 
 namespace Aop.Cache
 {
     public class Expectation
     {
-        public Guid Identifier { get; }
-
         private readonly string _methodName;
         private readonly Type _returnType;
+        private readonly Type _instanceType;
         private readonly IEnumerable<Parameter> _parameters;
-        public Func<IMemoryCache,string,MemoryCacheEntryOptions> OptionsFactory { get; }
 
-        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
+        private readonly Func<IMemoryCache, string, MemoryCacheEntryOptions> _optionsFactory;
+
+        private Expectation(Type instanceType, string methodName, Type returnType, IEnumerable<Parameter> parameters, Func<IMemoryCache,string,MemoryCacheEntryOptions> optionsFactory)
         {
-            Identifier = Guid.NewGuid();
-
+            _instanceType = instanceType;
             _methodName = methodName;
             _returnType = returnType;
             _parameters = parameters;
-            OptionsFactory = optionsFactory;
+            _optionsFactory = optionsFactory;
         }
 
         private static Parameter ToParameter(Expression element)
@@ -61,6 +59,7 @@ namespace Aop.Cache
         {
             return new Expectation
             (
+                expression!.Object!.Type,
                 expression.Method.Name,
                 expression.Method.ReturnType,
                 expression.Arguments.Select(ToParameter).ToArray(),
@@ -74,6 +73,7 @@ namespace Aop.Cache
 
             return new Expectation
             (
+                expression.Expression.Type,
                 propertyInfo.GetMethod.Name,
                 propertyInfo.PropertyType,
                 new List<Parameter>(), 
@@ -85,6 +85,7 @@ namespace Aop.Cache
         {
             return new Expectation
             (
+                invocation.TargetType,
                 invocation.MethodInvocationTarget.Name,
                 invocation.MethodInvocationTarget.ReturnType,
                 invocation.Arguments.Select(Parameter.MatchExact),
@@ -97,15 +98,16 @@ namespace Aop.Cache
             return
                 IsHit
                 (
+                    invocation.TargetType,
                     invocation.Method.Name,
                     invocation.Method.ReturnType,
                     invocation.Arguments
                 );
         }
 
-        public bool IsHit(string methodName, Type returnType, object[] arguments)
+        public bool IsHit(Type targetType, string methodName, Type returnType, object[] arguments)
         {
-            if (methodName != _methodName || returnType != _returnType)
+            if (!_instanceType.IsAssignableFrom(targetType) || methodName != _methodName || returnType != _returnType)
             {
                 return false;
             }
@@ -124,6 +126,13 @@ namespace Aop.Cache
             }
 
             return true;
+        }
+
+        public MemoryCacheEntryOptions GetCacheEntryOptions(IMemoryCache memoryCache, string cacheKey)
+        {
+            return
+                _optionsFactory
+                    .Invoke(memoryCache, cacheKey);
         }
     }
 }
