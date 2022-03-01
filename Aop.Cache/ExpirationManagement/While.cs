@@ -1,7 +1,6 @@
-﻿namespace Aop.Cache.ExpirationManagement
+﻿namespace Aop.Cache.ExpirationManagement;
+
+public static class While
 {
-    public static class While
-    {
-        public static Token Token => new Token();
-    }
+    public static Token Token => new();
 }
