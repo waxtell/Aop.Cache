@@ -42,7 +42,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
     (
         MethodCallExpression expression,
         Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> optionsFactory,
-        AoUDelegate addOrUpdateCacheDelegate,
+        AddOrUpdateDelegate addOrUpdateCacheDelegate,
         MarshallCacheResultsDelegate getFromCacheDelegate
     )
     {
@@ -66,7 +66,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
     (
         MemberExpression expression,
         Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> optionsFactory,
-        AoUDelegate addOrUpdateCacheDelegate,
+        AddOrUpdateDelegate addOrUpdateCacheDelegate,
         MarshallCacheResultsDelegate getFromCacheDelegate
     )
     {
@@ -90,7 +90,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
     (
         Expression<Func<T, TReturn>> target,
         Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> optionsFactory,
-        AoUDelegate addOrUpdateCacheDelegate,
+        AddOrUpdateDelegate addOrUpdateCacheDelegate,
         MarshallCacheResultsDelegate getFromCacheDelegate
     )
     {
