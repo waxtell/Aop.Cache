@@ -22,7 +22,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
                 target, 
                 optionsFactory, 
                 BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>(),
-                BuildGetFromCacheDelegateForAsynchronousFunc<TReturn>()
+                BuildMarshallCacheResultDelegateForAsynchronousFunc<TReturn>()
             );
     }
 
@@ -34,7 +34,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
                 target, 
                 optionsFactory,
                 BuildDefaultAddOrUpdateDelegate(),
-                BuildDefaultGetFromCacheDelegate()
+                BuildDefaultMarshallCacheResultDelegate()
             );
     }
 
@@ -43,7 +43,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
         MethodCallExpression expression,
         Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultsDelegate getFromCacheDelegate
+        MarshallCacheResultDelegate marshallResultDelegate
     )
     {
         Expectations
@@ -57,7 +57,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
                             optionsFactory
                         ),
                     addOrUpdateCacheDelegate,
-                    getFromCacheDelegate
+                    marshallResultDelegate
                 )
             );
     }
@@ -67,7 +67,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
         MemberExpression expression,
         Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultsDelegate getFromCacheDelegate
+        MarshallCacheResultDelegate marshallResultDelegate
     )
     {
         Expectations
@@ -81,7 +81,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
                             optionsFactory
                         ),
                     addOrUpdateCacheDelegate,
-                    getFromCacheDelegate
+                    marshallResultDelegate
                 )
             );
     }
@@ -91,7 +91,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
         Expression<Func<T, TReturn>> target,
         Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultsDelegate getFromCacheDelegate
+        MarshallCacheResultDelegate marshallResultDelegate
     )
     {
         MethodCallExpression expression = null;
@@ -99,7 +99,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
         switch (target.Body)
         {
             case MemberExpression memberExpression:
-                Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, getFromCacheDelegate);
+                Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, marshallResultDelegate);
                 return this;
 
             case UnaryExpression unaryExpression:
@@ -109,7 +109,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
 
         expression ??= target.Body as MethodCallExpression;
 
-        Cache(expression, optionsFactory, addOrUpdateCacheDelegate,getFromCacheDelegate);
+        Cache(expression, optionsFactory, addOrUpdateCacheDelegate,marshallResultDelegate);
 
         return this;
     }
