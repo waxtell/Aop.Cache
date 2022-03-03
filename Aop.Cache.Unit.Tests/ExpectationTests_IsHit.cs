@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Aop.Cache.ExpirationManagement;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using Xunit;
 
@@ -14,7 +15,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
@@ -34,7 +35,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(It.IsAny<int>(), "zero");
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
@@ -53,7 +54,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, It.IsNotNull<string>());
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
@@ -73,7 +74,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, It.IsNotNull<string>());
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
@@ -93,7 +94,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
@@ -113,7 +114,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);
@@ -133,7 +134,7 @@ public class ExpectationTests
     {
         Expression<Func<ForTestingPurposes, string>> expression = s => s.MethodCall(0, "zero");
 
-        var expectation = Expectation.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
+        var expectation = Expectation<MemoryCacheEntryOptions>.FromMethodCallExpression(expression.Body as MethodCallExpression, For.Ever());
 
         var invocation = new Mock<Castle.DynamicProxy.IInvocation>(MockBehavior.Strict);
         var methodInfo = new Mock<MethodInfo>(MockBehavior.Strict);

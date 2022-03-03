@@ -218,7 +218,7 @@ public class PerMethodAdapterTests
 
     public static IMemoryCache CacheFactory()
     {
-        return 
+        return
             new MemoryCache(Options.Create(new MemoryCacheOptions()));
     }
 }

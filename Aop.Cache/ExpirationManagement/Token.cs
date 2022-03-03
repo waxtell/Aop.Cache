@@ -6,7 +6,7 @@ namespace Aop.Cache.ExpirationManagement;
 
 public class Token
 {
-    public Func<IMemoryCache, string, MemoryCacheEntryOptions> NotChanged(IChangeToken changeToken)
+    public Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> NotChanged(IChangeToken changeToken)
     {
         return 
             (cache, key) =>

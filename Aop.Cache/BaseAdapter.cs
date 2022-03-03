@@ -1,5 +1,5 @@
-﻿global using AddOrUpdateDelegate = System.Action<object, Microsoft.Extensions.Caching.Memory.IMemoryCache, string, Microsoft.Extensions.Caching.Memory.MemoryCacheEntryOptions>;
-global using GetCachedResultDelegate = System.Func<object, object>;
+﻿//global using AddOrUpdateDelegate = System.Action<object, string, Microsoft.Extensions.Caching.Memory.MemoryCacheEntryOptions>;
+global using MarshallCacheResultsDelegate = System.Func<object, object>;
 
 using System;
 using System.Collections.Generic;
@@ -7,62 +7,63 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Aop.Cache;
 
-public abstract class BaseAdapter<T> : IInterceptor where T : class
+public abstract class BaseAdapter<T,TEntryOptions> : IInterceptor where T : class
 {
-    protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, GetCachedResultDelegate getFromCacheDelegate)> Expectations = new();
+    public delegate void AoUDelegate(string cacheKey, object result, TEntryOptions entryOptions);
 
-    protected BaseAdapter(IMemoryCache memCache)
+    protected readonly List<(Expectation<TEntryOptions> expectation, AoUDelegate addOrUpdateCacheDelegate, MarshallCacheResultsDelegate getFromCacheDelegate)> Expectations = new();
+
+    protected BaseAdapter(ICacheImplementation<TEntryOptions> memCache)
     {
         MemCache = memCache;
     }
 
-    protected IMemoryCache MemCache { get; }
+    protected ICacheImplementation<TEntryOptions> MemCache;
 
-    protected static void AddOrUpdate(IMemoryCache cache, string cacheKey, object result, MemoryCacheEntryOptions options)
+    protected void AddOrUpdate(string cacheKey, object result, TEntryOptions options)
     {
-        cache.Set(cacheKey, result, options);
+        MemCache.Set(cacheKey, result, options);
     }
 
-    protected static GetCachedResultDelegate BuildDefaultGetFromCacheDelegate()
+    protected static MarshallCacheResultsDelegate BuildDefaultGetFromCacheDelegate()
     {
-        Expression<GetCachedResultDelegate> expr = (returnValue) => returnValue;
+        Expression<MarshallCacheResultsDelegate> expr = (returnValue) => returnValue;
 
         return expr.Compile();
     }
 
-    protected static GetCachedResultDelegate BuildGetFromCacheDelegateForAsynchronousFunc<TReturn>()
+    protected static MarshallCacheResultsDelegate BuildGetFromCacheDelegateForAsynchronousFunc<TReturn>()
     {
-        Expression<GetCachedResultDelegate> expr =
+        Expression<MarshallCacheResultsDelegate> expr =
             (returnValue) => Task.FromResult((TReturn)returnValue);
 
         return expr.Compile();
     }
 
-    protected static AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>()
+    protected AoUDelegate BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>()
     {
-        Expression<AddOrUpdateDelegate> expr =
-            (returnValue, cache, cacheKey, memoryCacheEntryOptions) => (returnValue as Task<TReturn>)
+        Expression<AoUDelegate> expr =
+            (cacheKey, returnValue, memoryCacheEntryOptions) => (returnValue as Task<TReturn>)
                 .ContinueWith
                 (
-                    i => AddOrUpdate(cache, cacheKey, i.Result, memoryCacheEntryOptions)
+                    i => AddOrUpdate(cacheKey, i.Result, memoryCacheEntryOptions)
                 );
 
         return expr.Compile();
     }
 
-    protected static AddOrUpdateDelegate BuildDefaultAddOrUpdateDelegate()
+    protected AoUDelegate BuildDefaultAddOrUpdateDelegate()
     {
-        Expression<AddOrUpdateDelegate> expr =
-            (returnValue, cache, cacheKey, memoryCacheEntryOptions) => AddOrUpdate(cache, cacheKey, returnValue, memoryCacheEntryOptions);
+        Expression<AoUDelegate> expr =
+            (cacheKey, returnValue, memoryCacheEntryOptions) => AddOrUpdate(cacheKey, returnValue, memoryCacheEntryOptions);
 
         return expr.Compile();
     }
 
-    protected static GetCachedResultDelegate BuildGetFromCacheDelegateForType(Type tReturn)
+    protected static MarshallCacheResultsDelegate BuildGetFromCacheDelegateForType(Type tReturn)
     {
         var returnType = tReturn?.GetTypeInfo();
 
@@ -79,9 +80,9 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
         return BuildDefaultGetFromCacheDelegate();
     }
 
-    protected static GetCachedResultDelegate BuildGetFromCacheDelegateForAsynchronousFuncForType(Type tReturn)
+    protected static MarshallCacheResultsDelegate BuildGetFromCacheDelegateForAsynchronousFuncForType(Type tReturn)
     {
-        var mi = typeof(BaseAdapter<T>)
+        var mi = typeof(BaseAdapter<T,TEntryOptions>)
             .GetMethod
             (
                 nameof(BuildGetFromCacheDelegateForAsynchronousFunc), 
@@ -90,10 +91,10 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
 
         var miConstructed = mi?.MakeGenericMethod(tReturn);
 
-        return (GetCachedResultDelegate)miConstructed?.Invoke(null, null);
+        return (MarshallCacheResultsDelegate)miConstructed?.Invoke(null, null);
     }
 
-    protected static AddOrUpdateDelegate BuildAddOrUpdateDelegateForType(Type tReturn)
+    protected AoUDelegate BuildAddOrUpdateDelegateForType(Type tReturn)
     {
         var returnType = tReturn?.GetTypeInfo();
 
@@ -110,18 +111,20 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
         return BuildDefaultAddOrUpdateDelegate();
     }
 
-    private static AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFuncForType(Type tReturn)
+    private AoUDelegate BuildAddOrUpdateDelegateForAsynchronousFuncForType(Type tReturn)
     {
-        var mi = typeof(BaseAdapter<T>)
-            .GetMethod
-            (
-                nameof(BuildAddOrUpdateDelegateForAsynchronousFunc), 
-                BindingFlags.NonPublic | BindingFlags.Static
-            );
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+        var mi = typeof(BaseAdapter<T,TEntryOptions>)
+                    .GetMethod
+                    (
+                        nameof(BuildAddOrUpdateDelegateForAsynchronousFunc), 
+                        BindingFlags.NonPublic | BindingFlags.Instance
+                    );
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
         var miConstructed = mi?.MakeGenericMethod(tReturn);
 
-        return (AddOrUpdateDelegate)miConstructed?.Invoke(null, null);
+        return (AoUDelegate) miConstructed?.Invoke(this, null);
     }
 
     public T Adapt(T instance)

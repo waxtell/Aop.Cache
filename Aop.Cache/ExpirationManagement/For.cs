@@ -5,7 +5,7 @@ namespace Aop.Cache.ExpirationManagement;
 
 public static class For
 {
-    public static Func<IMemoryCache, string, MemoryCacheEntryOptions> Milliseconds(int numMilliseconds)
+    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Milliseconds(int numMilliseconds)
     {
         return
             (_, _) => new MemoryCacheEntryOptions
@@ -14,7 +14,7 @@ public static class For
             };
     }
 
-    public static Func<IMemoryCache, string, MemoryCacheEntryOptions> Seconds(int numSeconds)
+    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Seconds(int numSeconds)
     {
         return
             (_, _) => new MemoryCacheEntryOptions
@@ -23,7 +23,7 @@ public static class For
             };
     }
 
-    public static Func<IMemoryCache, string, MemoryCacheEntryOptions> Minutes(int numMinutes)
+    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Minutes(int numMinutes)
     {
         return
             (_, _) => new MemoryCacheEntryOptions
@@ -32,7 +32,7 @@ public static class For
             };
     }
 
-    public static Func<IMemoryCache, string, MemoryCacheEntryOptions> Hours(int numHours)
+    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Hours(int numHours)
     {
         return
             (_, _) => new MemoryCacheEntryOptions
@@ -41,7 +41,7 @@ public static class For
             };
     }
 
-    public static Func<IMemoryCache, string, MemoryCacheEntryOptions> Ever()
+    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Ever()
     {
         return
             (_, _) => new MemoryCacheEntryOptions();
