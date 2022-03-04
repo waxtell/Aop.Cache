@@ -29,7 +29,7 @@ public abstract class BaseAdapter<T,TEntryOptions> : IInterceptor where T : clas
 
     protected static MarshallCacheResultDelegate BuildDefaultMarshallCacheResultDelegate()
     {
-        Expression<MarshallCacheResultDelegate> expr = (returnValue) => returnValue;
+        Expression<MarshallCacheResultDelegate> expr = returnValue => returnValue;
 
         return expr.Compile();
     }

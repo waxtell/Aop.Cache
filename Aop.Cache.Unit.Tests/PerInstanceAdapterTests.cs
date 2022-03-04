@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
 using Microsoft.Extensions.Caching.Memory;
@@ -32,7 +31,7 @@ public class PerInstanceAdapterTests
 
         _ = await proxy.AsyncMethodCall(0, "zero");
 
-        Thread.Sleep(2000);
+        await Task.Delay(2000);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
             
@@ -105,10 +104,7 @@ public class PerInstanceAdapterTests
 
         _ = await proxy.AsyncMethodCall(0, "zero");
 
-        // I hate to have to do this, but otherwise the second
-        // invocation may complete before the first invocation
-        // is added to cache.
-        Thread.Sleep(2000);
+        await Task.Delay(2000);
 
         await proxy.AsyncMethodCall(0, "zero");
 

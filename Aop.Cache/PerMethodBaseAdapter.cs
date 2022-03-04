@@ -128,7 +128,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
         {
             var cacheKey = invocation.ToKey();
 
-            if (MemCache.TryGetValue(cacheKey, invocation.TargetType, out var cachedValue))
+            if (MemCache.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
                 invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }

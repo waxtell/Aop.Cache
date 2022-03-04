@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Aop.Cache.Extensions;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 
@@ -35,7 +36,7 @@ internal sealed class DistributedMemoryCacheImplementation : ICacheImplementatio
         }
 
         var decodedValue = Encoding.UTF8.GetString(result);
-        value = JsonConvert.DeserializeObject(decodedValue, valueType);
+        value = JsonConvert.DeserializeObject(decodedValue, valueType.GetBaseType());
 
         return true;
     }
