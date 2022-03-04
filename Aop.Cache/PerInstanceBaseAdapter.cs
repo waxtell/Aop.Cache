@@ -22,7 +22,7 @@ public abstract class PerInstanceBaseAdapter<T,TEntityOptions> : BaseAdapter<T, 
 
         if (expectation != null)
         {
-            if (MemCache.TryGetValue(cacheKey, invocation.TargetType, out var cachedValue))
+            if (MemCache.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
                 invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }
