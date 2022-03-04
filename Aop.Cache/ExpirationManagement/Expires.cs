@@ -30,7 +30,7 @@ public static class Expires
             };
     }
 
-    public static Func<ICacheImplementation<DistributedCacheEntryOptions>, string, DistributedCacheEntryOptions> AfterInactive(
+    public static Func<ICacheImplementation<DistributedCacheEntryOptions>, string, DistributedCacheEntryOptions> WhenInactiveFor(
         TimeSpan slidingExpiration)
     {
         return

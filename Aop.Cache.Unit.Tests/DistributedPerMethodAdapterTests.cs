@@ -57,6 +57,23 @@ public class DistributedPerMethodAdapterTests
     }
 
     [Fact]
+    public async Task InactiveInvocationsYieldsMultipleInvocations()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), Expires.WhenInactiveFor(TimeSpan.FromSeconds(1)))
+            .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        await Task.Delay(2000);
+        proxy.MethodCall(0, "zero");
+
+        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
+    }
+
+    [Fact]
     public void MixedInvocationsYieldsMultipleInvocations()
     {
         var instance = new ForTestingPurposes();
