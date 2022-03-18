@@ -13,7 +13,7 @@ internal static class InvocationExtensions
                 (
                     new
                     {
-                        TypeName = invocation.InvocationTarget.GetType().Name,
+                        TypeName = invocation.InvocationTarget.GetType().AssemblyQualifiedName,
                         MethodName = invocation.Method.Name,
                         ReturnType = invocation.Method.ReturnType.Name,
                         invocation.Arguments
