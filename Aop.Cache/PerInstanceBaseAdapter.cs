@@ -22,7 +22,7 @@ public abstract class PerInstanceBaseAdapter<T,TEntityOptions> : BaseAdapter<T, 
 
         if (expectation != null)
         {
-            if (MemCache.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
+            if (CacheImplementation.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
                 invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }
@@ -35,7 +35,7 @@ public abstract class PerInstanceBaseAdapter<T,TEntityOptions> : BaseAdapter<T, 
                     (
                         cacheKey,
                         invocation.ReturnValue,
-                        expectation.GetCacheEntryOptions(MemCache, cacheKey)
+                        expectation.GetCacheEntryOptions(CacheImplementation, cacheKey)
                     );
             }
         }
@@ -64,13 +64,13 @@ public abstract class PerInstanceBaseAdapter<T,TEntityOptions> : BaseAdapter<T, 
                 (
                     cacheKey,
                     invocation.ReturnValue,
-                    expectation.GetCacheEntryOptions(MemCache, cacheKey)
+                    expectation.GetCacheEntryOptions(CacheImplementation, cacheKey)
                 );
         }
     }
 
-    protected PerInstanceBaseAdapter(ICacheImplementation<TEntityOptions> memCache, Func<ICacheImplementation<TEntityOptions>,string, TEntityOptions> optionsFactory)
-        : base(memCache)
+    protected PerInstanceBaseAdapter(ICacheImplementation<TEntityOptions> cacheImplementation, Func<ICacheImplementation<TEntityOptions>,string, TEntityOptions> optionsFactory)
+        : base(cacheImplementation)
     {
         _optionsFactory = optionsFactory;
     }

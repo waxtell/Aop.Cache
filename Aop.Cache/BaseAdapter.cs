@@ -15,16 +15,16 @@ public abstract class BaseAdapter<T,TEntryOptions> : IInterceptor where T : clas
 
     protected readonly List<(Expectation<TEntryOptions> expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate)> Expectations = new();
 
-    protected BaseAdapter(ICacheImplementation<TEntryOptions> memCache)
+    protected BaseAdapter(ICacheImplementation<TEntryOptions> cacheImplementation)
     {
-        MemCache = memCache;
+        CacheImplementation = cacheImplementation;
     }
 
-    protected ICacheImplementation<TEntryOptions> MemCache;
+    protected ICacheImplementation<TEntryOptions> CacheImplementation;
 
     protected void AddOrUpdate(string cacheKey, object result, TEntryOptions options)
     {
-        MemCache.Set(cacheKey, result, options);
+        CacheImplementation.Set(cacheKey, result, options);
     }
 
     protected static MarshallCacheResultDelegate BuildDefaultMarshallCacheResultDelegate()

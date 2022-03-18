@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28407.52
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32210.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aop.Cache", "Aop.Cache\Aop.Cache.csproj", "{AA7C318B-EABC-499B-BEF0-240EA3428304}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aop.Cache.Unit.Tests", "Aop.Cache.Unit.Tests\Aop.Cache.Unit.Tests.csproj", "{377C75BA-1573-47D1-B8DF-8DF8581A39BE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aop.Cache.TestConsole", "Aop.Cache.TestConsole\Aop.Cache.TestConsole.csproj", "{4F6CC78E-C078-4DEE-B547-1C7DD41E8E85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{377C75BA-1573-47D1-B8DF-8DF8581A39BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{377C75BA-1573-47D1-B8DF-8DF8581A39BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{377C75BA-1573-47D1-B8DF-8DF8581A39BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F6CC78E-C078-4DEE-B547-1C7DD41E8E85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F6CC78E-C078-4DEE-B547-1C7DD41E8E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F6CC78E-C078-4DEE-B547-1C7DD41E8E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F6CC78E-C078-4DEE-B547-1C7DD41E8E85}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

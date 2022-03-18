@@ -14,8 +14,15 @@ internal sealed class MemoryCacheImplementation : ICacheImplementation<MemoryCac
 
     public void Set(string cacheKey, object result, MemoryCacheEntryOptions options)
     {
-        _cache
-            .Set(cacheKey, result, options);
+        try
+        {
+            _cache
+                .Set(cacheKey, result, options);
+        }
+        catch
+        {
+            // ignore
+        }
     }
 
     public bool TryGetValue(string cacheKey, Type _, out object value)

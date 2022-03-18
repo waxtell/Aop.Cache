@@ -9,8 +9,8 @@ namespace Aop.Cache;
 
 public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEntryOptions>, IPerMethodAdapter<T, TEntryOptions> where T : class
 {
-    protected PerMethodBaseAdapter(ICacheImplementation<TEntryOptions> memCache)
-        : base(memCache)
+    protected PerMethodBaseAdapter(ICacheImplementation<TEntryOptions> cacheImplementation)
+        : base(cacheImplementation)
     {
     }
 
@@ -128,7 +128,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
         {
             var cacheKey = invocation.ToKey();
 
-            if (MemCache.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
+            if (CacheImplementation.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
                 invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }
@@ -141,7 +141,7 @@ public abstract class PerMethodBaseAdapter<T,TEntryOptions> : BaseAdapter<T, TEn
                     (
                         cacheKey,
                         invocation.ReturnValue, 
-                        expectation.GetCacheEntryOptions(MemCache, cacheKey)
+                        expectation.GetCacheEntryOptions(CacheImplementation, cacheKey)
                     );
             }
         }
