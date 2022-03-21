@@ -7,22 +7,19 @@ using Castle.DynamicProxy;
 
 namespace Aop.Cache;
 
-public class Expectation<TEntryOptions>
+public class Expectation
 {
     private readonly string _methodName;
     private readonly Type _returnType;
     private readonly Type _instanceType;
     private readonly IEnumerable<Parameter> _parameters;
 
-    private readonly Func<ICacheImplementation<TEntryOptions>, string, TEntryOptions> _optionsFactory;
-
-    private Expectation(Type instanceType, string methodName, Type returnType, IEnumerable<Parameter> parameters, Func<ICacheImplementation<TEntryOptions>,string,TEntryOptions> optionsFactory)
+    private Expectation(Type instanceType, string methodName, Type returnType, IEnumerable<Parameter> parameters)
     {
         _instanceType = instanceType;
         _methodName = methodName;
         _returnType = returnType;
         _parameters = parameters;
-        _optionsFactory = optionsFactory;
     }
 
     private static Parameter ToParameter(Expression element)
@@ -54,41 +51,38 @@ public class Expectation<TEntryOptions>
                 );
     }
 
-    public static Expectation<TEntryOptions> FromMethodCallExpression(MethodCallExpression expression, Func<ICacheImplementation<TEntryOptions>,string, TEntryOptions> optionsFactory)
+    public static Expectation FromMethodCallExpression(MethodCallExpression expression)
     {
-        return new Expectation<TEntryOptions>
+        return new Expectation
         (
             expression!.Object!.Type,
             expression.Method.Name,
             expression.Method.ReturnType,
-            expression.Arguments.Select(ToParameter).ToArray(),
-            optionsFactory
+            expression.Arguments.Select(ToParameter).ToArray()
         );
     }
 
-    public static Expectation<TEntryOptions> FromMemberAccessExpression(MemberExpression expression, Func<ICacheImplementation<TEntryOptions>,string, TEntryOptions> optionsFactory)
+    public static Expectation FromMemberAccessExpression(MemberExpression expression)
     {
         var propertyInfo = (PropertyInfo) expression.Member;
 
-        return new Expectation<TEntryOptions>
+        return new Expectation
         (
             expression.Expression.Type,
             propertyInfo.GetMethod.Name,
             propertyInfo.PropertyType,
-            new List<Parameter>(), 
-            optionsFactory
+            new List<Parameter>()
         );
     }
 
-    public static Expectation<TEntryOptions> FromInvocation(IInvocation invocation, Func<ICacheImplementation<TEntryOptions>,string, TEntryOptions> optionsFactory)
+    public static Expectation FromInvocation(IInvocation invocation)
     {
-        return new Expectation<TEntryOptions>
+        return new Expectation
         (
             invocation.TargetType,
             invocation.MethodInvocationTarget.Name,
             invocation.MethodInvocationTarget.ReturnType,
-            invocation.Arguments.Select(Parameter.MatchExact),
-            optionsFactory
+            invocation.Arguments.Select(Parameter.MatchExact)
         );
     }
 
@@ -125,12 +119,5 @@ public class Expectation<TEntryOptions>
         }
 
         return true;
-    }
-
-    public TEntryOptions GetCacheEntryOptions(ICacheImplementation<TEntryOptions> memoryCache, string cacheKey)
-    {
-        return
-            _optionsFactory
-                .Invoke(memoryCache, cacheKey);
     }
 }

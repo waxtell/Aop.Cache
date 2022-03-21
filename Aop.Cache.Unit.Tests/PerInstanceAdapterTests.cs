@@ -138,9 +138,10 @@ public class PerInstanceAdapterTests
         Assert.Equal<uint>(3, instance1.MethodCallInvocationCount);
         Assert.Equal<uint>(0, instance2.MethodCallInvocationCount);
     }
-    public static IMemoryCache CacheFactory()
+    public static ICacheImplementation CacheFactory()
     {
         return
-            new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            CacheImplementationFactory
+                .FromMemoryCache(new MemoryCache(Options.Create(new MemoryCacheOptions())));
     }
 }

@@ -14,7 +14,7 @@ public class DistributedPerMethodAdapterTests
     public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
             .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -28,8 +28,8 @@ public class DistributedPerMethodAdapterTests
     public void MultipleCachedInvocationsYieldsSingleActualInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.MethodCall(0, "zero"), Expires.Never())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), For.Ever())
             .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -43,8 +43,8 @@ public class DistributedPerMethodAdapterTests
     public async Task ExpiredInvocationsYieldsMultipleInvocations()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(0, "zero"), Expires.After(TimeSpan.FromMilliseconds(1)))
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.MethodCall(0, "zero"), For.Milliseconds(1))
                         .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -60,7 +60,7 @@ public class DistributedPerMethodAdapterTests
     public async Task InactiveInvocationsYieldsMultipleInvocations()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
             .Cache(x => x.MethodCall(0, "zero"), Expires.WhenInactiveFor(TimeSpan.FromSeconds(1)))
             .Adapt(instance);
 
@@ -78,8 +78,8 @@ public class DistributedPerMethodAdapterTests
     {
         var instance = new ForTestingPurposes();
 
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(0, "zero"), Expires.Never())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.MethodCall(0, "zero"), For.Ever())
                         .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -95,8 +95,8 @@ public class DistributedPerMethodAdapterTests
     {
         var instance = new ForTestingPurposes();
 
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), Expires.Never())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
                         .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -113,8 +113,8 @@ public class DistributedPerMethodAdapterTests
     public void MultipleCacheExpectationsYieldExpectedResult()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), Expires.Never())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
                         .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -132,8 +132,8 @@ public class DistributedPerMethodAdapterTests
     public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), Expires.Never())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
                         .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
@@ -151,9 +151,9 @@ public class DistributedPerMethodAdapterTests
     {
         var instance = new ForTestingPurposes();
 
-        var proxy = new DistributedPerMethodAdapter<ForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), Expires.Never())
-                        .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), Expires.Never())
+        var proxy = new PerMethodAdapter<ForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Ever())
+                        .Cache(x => x.VirtualMethodCall(It.IsAny<int>(), "zero"), For.Ever())
                         .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -170,8 +170,8 @@ public class DistributedPerMethodAdapterTests
     public void MultipleMemberInvocationsYieldsSingleInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.Member, Expires.Never())
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.Member, For.Ever())
                         .Adapt(instance);
 
         proxy.Member = "test";
@@ -190,8 +190,8 @@ public class DistributedPerMethodAdapterTests
     public async Task ExpiredResultYieldsMultipleActualInvocations()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), Expires.After(TimeSpan.FromMilliseconds(1)))
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Milliseconds(1))
             .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
@@ -203,9 +203,15 @@ public class DistributedPerMethodAdapterTests
         Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
     }
 
-    public static IDistributedCache CacheFactory()
+    public static ICacheImplementation CacheFactory()
     {
         return
-            new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+            new DistributedMemoryCacheImplementation
+            (
+                new MemoryDistributedCache
+                (
+                    Options.Create(new MemoryDistributedCacheOptions())
+                )
+            );
     }
 }

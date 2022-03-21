@@ -5,24 +5,25 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using Aop.Cache.ExpirationManagement;
 using Castle.DynamicProxy;
 
 namespace Aop.Cache;
 
-public abstract class BaseAdapter<T,TEntryOptions> : IInterceptor where T : class
+public abstract class BaseAdapter<T> : IInterceptor where T : class
 {
-    public delegate void AddOrUpdateDelegate(string cacheKey, object result, TEntryOptions entryOptions);
+    public delegate void AddOrUpdateDelegate(string cacheKey, object result, CacheEntryOptions entryOptions);
 
-    protected readonly List<(Expectation<TEntryOptions> expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate)> Expectations = new();
+    protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate, Func<CacheEntryOptions> optionsFactory)> Expectations = new();
 
-    protected BaseAdapter(ICacheImplementation<TEntryOptions> cacheImplementation)
+    protected BaseAdapter(ICacheImplementation cacheImplementation)
     {
         CacheImplementation = cacheImplementation;
     }
 
-    protected ICacheImplementation<TEntryOptions> CacheImplementation;
+    protected ICacheImplementation CacheImplementation;
 
-    protected void AddOrUpdate(string cacheKey, object result, TEntryOptions options)
+    protected void AddOrUpdate(string cacheKey, object result, CacheEntryOptions options)
     {
         CacheImplementation.Set(cacheKey, result, options);
     }
@@ -82,7 +83,7 @@ public abstract class BaseAdapter<T,TEntryOptions> : IInterceptor where T : clas
     protected static MarshallCacheResultDelegate BuildGetFromCacheDelegateForAsynchronousFuncForType(Type tReturn)
     {
 #pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-        var mi = typeof(BaseAdapter<T,TEntryOptions>)
+        var mi = typeof(BaseAdapter<T>)
             .GetMethod
             (
                 nameof(BuildMarshallCacheResultDelegateForAsynchronousFunc), 
@@ -115,7 +116,7 @@ public abstract class BaseAdapter<T,TEntryOptions> : IInterceptor where T : clas
     private AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFuncForType(Type tReturn)
     {
 #pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-        var mi = typeof(BaseAdapter<T,TEntryOptions>)
+        var mi = typeof(BaseAdapter<T>)
                     .GetMethod
                     (
                         nameof(BuildAddOrUpdateDelegateForAsynchronousFunc), 

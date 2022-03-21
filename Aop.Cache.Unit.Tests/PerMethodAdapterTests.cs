@@ -1,9 +1,7 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using Xunit;
 
 namespace Aop.Cache.Unit.Tests;
@@ -37,44 +35,6 @@ public class PerMethodAdapterTests
         proxy.MethodCall(0, "zero");
 
         Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
-    }
-
-    [Fact]
-    public void ExpiredInvocationsYieldsMultipleInvocations()
-    {
-        var source = new CancellationTokenSource(0);
-        var token = new CancellationChangeToken(source.Token);
-
-        var instance = new ForTestingPurposes();
-        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(0, "zero"), While.Token.NotChanged(token))
-                        .Adapt(instance);
-
-        proxy.MethodCall(0, "zero");
-        proxy.MethodCall(0, "zero");
-        proxy.MethodCall(1, "one");
-        proxy.MethodCall(2, "two");
-
-        Assert.Equal<uint>(4, instance.MethodCallInvocationCount);
-    }
-
-    [Fact]
-    public void CancelChangeTokenRemovesCacheEntry()
-    {
-        var source = new CancellationTokenSource();
-        var token = new CancellationChangeToken(source.Token);
-
-        var instance = new ForTestingPurposes();
-        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-                        .Cache(x => x.MethodCall(0, "zero"), While.Token.NotChanged(token))
-                        .Adapt(instance);
-
-        proxy.MethodCall(0, "zero");
-        proxy.MethodCall(0, "zero");
-        source.Cancel();
-        proxy.MethodCall(0, "zero");
-
-        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
     }
 
     [Fact]
@@ -193,12 +153,9 @@ public class PerMethodAdapterTests
     [Fact]
     public async Task ExpiredResultYieldsMultipleActualInvocations()
     {
-        var source = new CancellationTokenSource(0);
-        var token = new CancellationChangeToken(source.Token);
-
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
-            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), While.Token.NotChanged(token))
+            .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Milliseconds(1))
             .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
@@ -210,9 +167,15 @@ public class PerMethodAdapterTests
         Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
     }
 
-    public static IMemoryCache CacheFactory()
+    public static ICacheImplementation CacheFactory()
     {
         return
-            new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            new MemoryCacheImplementation
+            (
+                new MemoryCache
+                (
+                    Options.Create(new MemoryCacheOptions())
+                )
+            );
     }
 }

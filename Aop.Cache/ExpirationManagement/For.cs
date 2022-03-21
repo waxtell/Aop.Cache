@@ -1,44 +1,43 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using System;
+﻿using System;
 
 namespace Aop.Cache.ExpirationManagement;
 
 public static class For
 {
-    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Ever()
+    public static Func<CacheEntryOptions> Ever()
     {
         return
-            (_, _) => new MemoryCacheEntryOptions();
+            () => new CacheEntryOptions();
     }
 
-    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Milliseconds(int numMilliseconds)
+    public static Func<CacheEntryOptions> Milliseconds(int numMilliseconds)
     {
         return
             FromTimeSpan(TimeSpan.FromMilliseconds(numMilliseconds));
     }
 
-    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Seconds(int numSeconds)
+    public static Func<CacheEntryOptions> Seconds(int numSeconds)
     {
         return
             FromTimeSpan(TimeSpan.FromSeconds(numSeconds));
     }
 
-    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Minutes(int numMinutes)
+    public static Func<CacheEntryOptions> Minutes(int numMinutes)
     {
         return
             FromTimeSpan(TimeSpan.FromMinutes(numMinutes));
     }
 
-    public static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> Hours(int numHours)
+    public static Func<CacheEntryOptions> Hours(int numHours)
     {
         return
             FromTimeSpan(TimeSpan.FromHours(numHours));
     }
 
-    private static Func<ICacheImplementation<MemoryCacheEntryOptions>, string, MemoryCacheEntryOptions> FromTimeSpan(TimeSpan timeSpan)
+    private static Func<CacheEntryOptions> FromTimeSpan(TimeSpan timeSpan)
     {
         return
-            (_, _) => new MemoryCacheEntryOptions
+            () => new CacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = timeSpan
             };

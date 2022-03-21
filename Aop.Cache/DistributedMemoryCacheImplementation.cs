@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Text;
+using Aop.Cache.ExpirationManagement;
 using Aop.Cache.Extensions;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
 
 namespace Aop.Cache;
 
-internal sealed class DistributedMemoryCacheImplementation : ICacheImplementation<DistributedCacheEntryOptions>
+internal sealed class DistributedMemoryCacheImplementation : ICacheImplementation
 {
     private readonly IDistributedCache _cache;
 
@@ -15,7 +16,7 @@ internal sealed class DistributedMemoryCacheImplementation : ICacheImplementatio
         _cache = cache;
     }
 
-    public void Set(string cacheKey, object result, DistributedCacheEntryOptions options)
+    public void Set(string cacheKey, object result, CacheEntryOptions options)
     {
         try
         {
@@ -23,7 +24,7 @@ internal sealed class DistributedMemoryCacheImplementation : ICacheImplementatio
             var encodedValue = Encoding.UTF8.GetBytes(serializedValue);
 
             _cache
-                .Set(cacheKey, encodedValue, options);
+                .Set(cacheKey, encodedValue, (DistributedCacheEntryOptions) options);
         }
         catch
         {

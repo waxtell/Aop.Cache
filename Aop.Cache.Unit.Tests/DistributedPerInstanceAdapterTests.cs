@@ -14,7 +14,7 @@ public class DistributedPerInstanceAdapterTests
     public void MultipleCachedInvocationsYieldsSingleActualInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never())
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -28,7 +28,7 @@ public class DistributedPerInstanceAdapterTests
     public async Task MultipleCachedAsyncInvocationsYieldsSingleInstanceInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never())
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
@@ -44,7 +44,7 @@ public class DistributedPerInstanceAdapterTests
     public void MultipleDistinctCachedInvocationsYieldsSingleActualInvocationPerDistinctInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never())
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
         proxy.MethodCall(0, "zero");
@@ -61,7 +61,7 @@ public class DistributedPerInstanceAdapterTests
     public void MultipleDistinctCachedMemberInvocationsYieldsSingleActualInvocation()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never())
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
         _ = proxy.Member;
@@ -75,7 +75,7 @@ public class DistributedPerInstanceAdapterTests
     public void VoidReturnTypeInvocationsAreNotCached()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never())
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
         proxy.Member = "Test";
@@ -89,7 +89,7 @@ public class DistributedPerInstanceAdapterTests
     public async Task AsyncActionInvocationsAreNotCached()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never())
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
         await proxy.AsyncAction(0, 1, "two");
@@ -101,7 +101,7 @@ public class DistributedPerInstanceAdapterTests
     public async Task ExpiredResultYieldsMultipleActualInvocations()
     {
         var instance = new ForTestingPurposes();
-        var proxy = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.After(TimeSpan.FromMilliseconds(1)))
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Milliseconds(1))
             .Adapt(instance);
 
         _ = await proxy.AsyncMethodCall(0, "zero");
@@ -119,7 +119,7 @@ public class DistributedPerInstanceAdapterTests
         var instance1 = new ForTestingPurposes();
         var instance2 = new ForTestingPurposes();
 
-        var adapter = new DistributedPerInstanceAdapter<IForTestingPurposes>(CacheFactory(), Expires.Never());
+        var adapter = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever());
         var proxy1 = adapter.Adapt(instance1);
         var proxy2 = adapter.Adapt(instance2);
 
@@ -140,9 +140,10 @@ public class DistributedPerInstanceAdapterTests
         Assert.Equal<uint>(3, instance1.MethodCallInvocationCount);
         Assert.Equal<uint>(0, instance2.MethodCallInvocationCount);
     }
-    public static IDistributedCache CacheFactory()
+    public static ICacheImplementation CacheFactory()
     {
         return
-            new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+            CacheImplementationFactory
+                .FromDistributedCache(new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())));
     }
 }

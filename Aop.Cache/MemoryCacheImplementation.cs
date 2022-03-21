@@ -1,9 +1,10 @@
 ﻿using System;
+using Aop.Cache.ExpirationManagement;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Aop.Cache;
 
-internal sealed class MemoryCacheImplementation : ICacheImplementation<MemoryCacheEntryOptions>
+internal sealed class MemoryCacheImplementation : ICacheImplementation
 {
     private readonly IMemoryCache _cache;
 
@@ -12,12 +13,12 @@ internal sealed class MemoryCacheImplementation : ICacheImplementation<MemoryCac
         _cache = cache;
     }
 
-    public void Set(string cacheKey, object result, MemoryCacheEntryOptions options)
+    public void Set(string cacheKey, object result, CacheEntryOptions options)
     {
         try
         {
             _cache
-                .Set(cacheKey, result, options);
+                .Set(cacheKey, result, (MemoryCacheEntryOptions) options);
         }
         catch
         {

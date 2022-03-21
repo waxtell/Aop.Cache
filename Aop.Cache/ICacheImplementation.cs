@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Aop.Cache.ExpirationManagement;
+using System;
 
 namespace Aop.Cache;
 
-public interface ICacheImplementation<in TEntryOptions>
+public interface ICacheImplementation
 {
-    void Set(string cacheKey, object result, TEntryOptions options);
+    void Set(string cacheKey, object result, CacheEntryOptions options);
     bool TryGetValue(string cacheKey, Type valueType, out object value);
     void Remove(string cacheKey);
 }
