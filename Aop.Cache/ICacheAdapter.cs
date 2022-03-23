@@ -1,7 +1,6 @@
-﻿namespace Aop.Cache
+﻿namespace Aop.Cache;
+
+public interface ICacheAdapter<T> where T : class
 {
-    public interface ICacheAdapter<T> where T : class
-    {
-        T Adapt(T instance);
-    }
+    T Adapt(T instance);
 }

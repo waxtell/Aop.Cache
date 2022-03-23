@@ -1,30 +1,45 @@
 ﻿using System;
 
-namespace Aop.Cache.ExpirationManagement
+namespace Aop.Cache.ExpirationManagement;
+
+public static class For
 {
-    public static class For
+    public static Func<CacheEntryOptions> Ever()
     {
-        public static Func<DateTime, bool> Milliseconds(int numMilliseconds)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddMilliseconds(numMilliseconds);
-        }
-        public static Func<DateTime, bool> Seconds(int numSeconds)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddSeconds(numSeconds);
-        }
+        return
+            () => new CacheEntryOptions();
+    }
 
-        public static Func<DateTime, bool> Minutes(int numMinutes)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddMinutes(numMinutes);
-        }
-        public static Func<DateTime, bool> Hours(int numHours)
-        {
-            return (dt) => DateTime.UtcNow > dt.AddHours(numHours);
-        }
+    public static Func<CacheEntryOptions> Milliseconds(int numMilliseconds)
+    {
+        return
+            FromTimeSpan(TimeSpan.FromMilliseconds(numMilliseconds));
+    }
 
-        public static Func<DateTime, bool> Ever()
-        {
-            return (dt) => false;
-        }
+    public static Func<CacheEntryOptions> Seconds(int numSeconds)
+    {
+        return
+            FromTimeSpan(TimeSpan.FromSeconds(numSeconds));
+    }
+
+    public static Func<CacheEntryOptions> Minutes(int numMinutes)
+    {
+        return
+            FromTimeSpan(TimeSpan.FromMinutes(numMinutes));
+    }
+
+    public static Func<CacheEntryOptions> Hours(int numHours)
+    {
+        return
+            FromTimeSpan(TimeSpan.FromHours(numHours));
+    }
+
+    private static Func<CacheEntryOptions> FromTimeSpan(TimeSpan timeSpan)
+    {
+        return
+            () => new CacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = timeSpan
+            };
     }
 }

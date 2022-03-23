@@ -5,131 +5,119 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Castle.DynamicProxy;
 
-namespace Aop.Cache
+namespace Aop.Cache;
+
+public class Expectation
 {
-    public class Expectation
+    private readonly string _methodName;
+    private readonly Type _returnType;
+    private readonly Type _instanceType;
+    private readonly IEnumerable<Parameter> _parameters;
+
+    private Expectation(Type instanceType, string methodName, Type returnType, IEnumerable<Parameter> parameters)
     {
-        public Guid Identifier { get; }
+        _instanceType = instanceType;
+        _methodName = methodName;
+        _returnType = returnType;
+        _parameters = parameters;
+    }
 
-        private readonly string _methodName;
-        private readonly Type _returnType;
-        private readonly IEnumerable<Parameter> _parameters;
-        private readonly Func<object,DateTime,bool> _expiration;
-
-        private Expectation(string methodName, Type returnType, IEnumerable<Parameter> parameters, Func<object, DateTime, bool> expiration)
+    private static Parameter ToParameter(Expression element)
+    {
+        if (element is ConstantExpression expression)
         {
-            Identifier = Guid.NewGuid();
-
-            _methodName = methodName;
-            _returnType = returnType;
-            _parameters = parameters;
-            _expiration = expiration;
+            return Parameter.MatchExact(expression.Value);
         }
 
-        private static Parameter ToParameter(Expression element)
+        if (element is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(It))
         {
-            if (element is ConstantExpression expression)
+            switch (methodCall.Method.Name)
             {
-                return Parameter.MatchExact(expression.Value);
+                case nameof(It.IsAny):
+                    return Parameter.MatchAny();
+                case nameof(It.IsNotNull):
+                    return Parameter.MatchNotNull();
             }
-
-            if (element is MethodCallExpression methodCall)
-            {
-                if (methodCall.Method.DeclaringType == typeof(It))
-                {
-                    switch (methodCall.Method.Name)
-                    {
-                        case nameof(It.IsAny):
-                            return Parameter.MatchAny();
-                        case nameof(It.IsNotNull):
-                            return Parameter.MatchNotNull();
-                    }
-                }
-            }
-
-            return 
-                Parameter
-                    .MatchExact
-                    (
-                        Expression
-                            .Lambda(Expression.Convert(element, element.Type))
-                            .Compile()
-                            .DynamicInvoke()
-                    );
         }
 
-        public static Expectation FromMethodCallExpression(MethodCallExpression expression, Func<object, DateTime, bool> expirationDelegate)
-        {
-            return new Expectation
-            (
-                expression.Method.Name,
-                expression.Method.ReturnType,
-                expression.Arguments.Select(ToParameter).ToArray(),
-                expirationDelegate
-            );
-        }
-
-        public static Expectation FromMemberAccessExpression(MemberExpression expression, Func<object, DateTime, bool> expirationDelegate)
-        {
-            var propertyInfo = (PropertyInfo) expression.Member;
-
-            return new Expectation
-            (
-                propertyInfo.GetMethod.Name,
-                propertyInfo.PropertyType,
-                new List<Parameter>(), 
-                expirationDelegate
-            );
-        }
-
-        public static Expectation FromInvocation(IInvocation invocation, Func<object, DateTime, bool> expirationDelegate)
-        {
-            return new Expectation
-            (
-                invocation.MethodInvocationTarget.Name,
-                invocation.MethodInvocationTarget.ReturnType,
-                invocation.Arguments.Select(Parameter.MatchExact),
-                expirationDelegate
-            );
-        }
-
-        public bool IsHit(IInvocation invocation)
-        {
-            return
-                IsHit
+        return 
+            Parameter
+                .MatchExact
                 (
-                    invocation.Method.Name,
-                    invocation.Method.ReturnType,
-                    invocation.Arguments
+                    Expression
+                        .Lambda(Expression.Convert(element, element.Type))
+                        .Compile()
+                        .DynamicInvoke()
                 );
+    }
+
+    public static Expectation FromMethodCallExpression(MethodCallExpression expression)
+    {
+        return new Expectation
+        (
+            expression!.Object!.Type,
+            expression.Method.Name,
+            expression.Method.ReturnType,
+            expression.Arguments.Select(ToParameter).ToArray()
+        );
+    }
+
+    public static Expectation FromMemberAccessExpression(MemberExpression expression)
+    {
+        var propertyInfo = (PropertyInfo) expression.Member;
+
+        return new Expectation
+        (
+            expression.Expression.Type,
+            propertyInfo.GetMethod.Name,
+            propertyInfo.PropertyType,
+            new List<Parameter>()
+        );
+    }
+
+    public static Expectation FromInvocation(IInvocation invocation)
+    {
+        return new Expectation
+        (
+            invocation.TargetType,
+            invocation.MethodInvocationTarget.Name,
+            invocation.MethodInvocationTarget.ReturnType,
+            invocation.Arguments.Select(Parameter.MatchExact)
+        );
+    }
+
+    public bool IsHit(IInvocation invocation)
+    {
+        return
+            IsHit
+            (
+                invocation.TargetType,
+                invocation.Method.Name,
+                invocation.Method.ReturnType,
+                invocation.Arguments
+            );
+    }
+
+    public bool IsHit(Type targetType, string methodName, Type returnType, object[] arguments)
+    {
+        if (!_instanceType.IsAssignableFrom(targetType) || methodName != _methodName || returnType != _returnType)
+        {
+            return false;
         }
 
-        public bool IsExpired(object cachedValue, DateTime executionDateTimeUtc)
+        if (arguments.Length != _parameters.Count())
         {
-            return _expiration.Invoke(cachedValue, executionDateTimeUtc);
+            return false;
         }
 
-        public bool IsHit(string methodName, Type returnType, object[] arguments)
+        for (var i = 0; i < arguments.Length; i++)
         {
-            if (methodName != _methodName || returnType != _returnType)
+            if (!_parameters.ElementAt(i).IsMatch(arguments[i]))
             {
                 return false;
             }
-
-            if (arguments.Length != _parameters.Count())
-            {
-                return false;
-            }
-
-            for (var i = 0; i < arguments.Length; i++)
-            {
-                if (!_parameters.ElementAt(i).IsMatch(arguments[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
+
+        return true;
     }
 }

@@ -1,12 +1,14 @@
+using System;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Aop.Cache.Unit.Tests;
 
-public class PerMethodAdapterTests
+public class DistributedPerMethodAdapterTests
 {
     [Fact]
     public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
@@ -35,6 +37,40 @@ public class PerMethodAdapterTests
         proxy.MethodCall(0, "zero");
 
         Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
+    }
+
+    [Fact]
+    public async Task ExpiredInvocationsYieldsMultipleInvocations()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache(x => x.MethodCall(0, "zero"), For.Milliseconds(1))
+                        .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(1, "one");
+        proxy.MethodCall(2, "two");
+        await Task.Delay(10);
+        proxy.MethodCall(0, "zero");
+
+        Assert.Equal<uint>(4, instance.MethodCallInvocationCount);
+    }
+
+    [Fact]
+    public async Task InactiveInvocationsYieldsMultipleInvocations()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, "zero"), Expires.WhenInactiveFor(TimeSpan.FromSeconds(1)))
+            .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+        await Task.Delay(2000);
+        proxy.MethodCall(0, "zero");
+
+        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
     }
 
     [Fact]
@@ -170,11 +206,11 @@ public class PerMethodAdapterTests
     public static ICacheImplementation CacheFactory()
     {
         return
-            new MemoryCacheImplementation
+            new DistributedMemoryCacheImplementation
             (
-                new MemoryCache
+                new MemoryDistributedCache
                 (
-                    Options.Create(new MemoryCacheOptions())
+                    Options.Create(new MemoryDistributedCacheOptions())
                 )
             );
     }
