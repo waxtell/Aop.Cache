@@ -2,8 +2,7 @@
 Simple,AOP cache adapter.
 
 
-[![Build status](https://ci.appveyor.com/api/projects/status/r9ax7l4277b6692y?svg=true)](https://ci.appveyor.com/project/waxtell/aop-cache-e6xqw) [![NuGet Badge](https://buildstats.info/nuget/Aop.Cache)](https://www.nuget.org/packages/Aop.Cache/)
-[![Coverage Status](https://coveralls.io/repos/github/waxtell/Aop.Cache/badge.svg?branch=master)](https://coveralls.io/github/waxtell/Aop.Cache?branch=master)
+[![Build](https://github.com/waxtell/Aop.Cache/actions/workflows/build.yml/badge.svg)](https://github.com/waxtell/Aop.Cache/actions/workflows/build.yml)
 
 **Explicit Parameter Matching**
 
@@ -13,7 +12,7 @@ public void MixedInvocationsYieldsMultipleActualInvocations()
 {
     var instance = new ForTestingPurposes();
 
-    var proxy = new PerMethodAdapter<IForTestingPurposes>()
+    var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
                     .Cache(x => x.MethodCall(0, "zero"), For.Seconds(30))
                     .Adapt(instance);
 
@@ -32,7 +31,7 @@ public void MixedFuzzyInvocationsYieldsMultipleActualInvocations()
 {
     var instance = new ForTestingPurposes();
 
-    var proxy = new PerMethodAdapter<IForTestingPurposes>()
+    var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
                     .Cache(x => x.MethodCall(It.IsAny<int>(), "zero"), For.Minutes(5))
                     .Adapt(instance);
 
@@ -52,7 +51,7 @@ public void MixedFuzzyInvocationsYieldsMultipleActualInvocations()
 public void MultipleCachedInvocationsYieldsSingleActualInvocation()
 {
     var instance = new ForTestingPurposes();
-    var proxy = new PerInstanceAdapter<IForTestingPurposes>(For.Ever())
+    var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
                     .Adapt(instance);
 
     proxy.MethodCall(0, "zero");
