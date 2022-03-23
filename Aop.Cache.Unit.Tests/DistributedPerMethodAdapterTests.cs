@@ -206,12 +206,13 @@ public class DistributedPerMethodAdapterTests
     public static ICacheImplementation CacheFactory()
     {
         return
-            new DistributedMemoryCacheImplementation
-            (
-                new MemoryDistributedCache
+            CacheImplementationFactory
+                .FromDistributedCache
                 (
-                    Options.Create(new MemoryDistributedCacheOptions())
-                )
-            );
+                    new MemoryDistributedCache
+                    (
+                        Options.Create(new MemoryDistributedCacheOptions())
+                    )
+                );
     }
 }

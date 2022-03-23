@@ -170,12 +170,13 @@ public class PerMethodAdapterTests
     public static ICacheImplementation CacheFactory()
     {
         return
-            new MemoryCacheImplementation
-            (
-                new MemoryCache
+            CacheImplementationFactory
+                .FromMemoryCache
                 (
-                    Options.Create(new MemoryCacheOptions())
-                )
-            );
+                    new MemoryCache
+                    (
+                        Options.Create(new MemoryCacheOptions())
+                    )
+                );
     }
 }
