@@ -9,28 +9,26 @@
     <PackageLicenseUrl>https://github.com/waxtell/Aop.Cache/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/waxtell/Aop.Cache.git</RepositoryUrl>
     <PackageTags>Cache AOP DynamicProxy</PackageTags>
-    <PackageReleaseNotes>[1.1.0] Initial release
+    <PackageReleaseNotes>
+[1.1.0] Initial release
 [1.2.0] Support for MemberExpression (property getters)
 [1.3.0] Support for instance centric caching
 [1.4.0] Per method caching now supports asynchronous methods
 [1.5.0] Per instance caching now supports asynchronous methods.
 [2.0.0] Separated configuration and instantiation to allow for better lifetime management (BREAKING CHANGE!)
-[2.0.1] Better support for concurrency</PackageReleaseNotes>
+[2.0.1] Better support for concurrency
+[3.0.0] Support native MS caching providers (BREAKING CHANGE!)
+    </PackageReleaseNotes>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <PropertyGroup>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Castle.Core" Version="4.3.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
   </ItemGroup>

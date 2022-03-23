@@ -3,7 +3,7 @@ using Castle.DynamicProxy;
 
 namespace Aop.Cache;
 
-public static class InvocationExtensions
+internal static class InvocationExtensions
 {
     public static bool IsAction(this IInvocation invocation)
     {

@@ -4,12 +4,13 @@ namespace Aop.Cache.ExpirationManagement;
 
 public static class Expires
 {
-    public static Func<CacheEntryOptions> WhenInactiveFor(TimeSpan slidingExpiration)
+    public static Func<CacheEntryOptions> WhenInactiveFor(TimeSpan slidingExpiration, DateTimeOffset? absoluteExpiration = null)
     {
         return
             () => new CacheEntryOptions
             {
-                SlidingExpiration = slidingExpiration
+                SlidingExpiration = slidingExpiration,
+                AbsoluteExpiration = absoluteExpiration
             };
     }
 
