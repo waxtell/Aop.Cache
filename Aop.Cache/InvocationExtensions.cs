@@ -1,13 +1,12 @@
 ﻿using System.Threading.Tasks;
 using Castle.DynamicProxy;
 
-namespace Aop.Cache
+namespace Aop.Cache;
+
+internal static class InvocationExtensions
 {
-    public static class InvocationExtensions
+    public static bool IsAction(this IInvocation invocation)
     {
-        public static bool IsAction(this IInvocation invocation)
-        {
-            return invocation.Method.ReturnType == typeof(void) || invocation.Method.ReturnType == typeof(Task);
-        }
+        return invocation.Method.ReturnType == typeof(void) || invocation.Method.ReturnType == typeof(Task);
     }
 }

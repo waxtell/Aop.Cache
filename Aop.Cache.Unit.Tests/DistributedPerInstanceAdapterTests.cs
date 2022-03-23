@@ -1,12 +1,14 @@
+using System;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Aop.Cache.Unit.Tests;
 
-public class PerInstanceAdapterTests
+public class DistributedPerInstanceAdapterTests
 {
     [Fact]
     public void MultipleCachedInvocationsYieldsSingleActualInvocation()
@@ -142,6 +144,6 @@ public class PerInstanceAdapterTests
     {
         return
             CacheImplementationFactory
-                .FromMemoryCache(new MemoryCache(Options.Create(new MemoryCacheOptions())));
+                .FromDistributedCache(new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())));
     }
 }

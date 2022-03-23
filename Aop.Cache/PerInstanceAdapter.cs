@@ -1,122 +1,86 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Linq;
-using System.Linq.Expressions;
+using Aop.Cache.ExpirationManagement;
+using Aop.Cache.Extensions;
 using Castle.DynamicProxy;
-using Newtonsoft.Json;
 
-namespace Aop.Cache
+namespace Aop.Cache;
+
+public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> where T : class
 {
-    public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> where T : class
+    private readonly Func<CacheEntryOptions> _optionsFactory;
+
+    public override void Intercept(IInvocation invocation)
     {
-        private readonly Func<object, DateTime, bool> _expirationDelegate;
-
-        public override void Intercept(IInvocation invocation)
+        if (invocation.IsAction())
         {
-            if (invocation.IsAction())
+            invocation.Proceed();
+            return;
+        }
+
+        var 
+        (
+            expectation, 
+            addOrUpdateCache, 
+            getFromCache,
+            optionsFactory
+        ) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
+
+        var cacheKey = invocation.ToKey();
+
+        if (expectation != null)
+        {
+            if (CacheImplementation.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
-                invocation.Proceed();
-                return;
-            }
-
-            var (expectation, addOrUpdateCache, getFromCache) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
-            var cacheKey = JsonConvert.SerializeObject(invocation.Arguments);
-
-            if (expectation != null)
-            {
-                if (CachedInvocations.TryGetValue(expectation.Identifier, out var cachedInvocation))
-                {
-                    if (cachedInvocation.TryGetValue(cacheKey, out var cachedValue))
-                    {
-                        if (expectation.IsExpired(cachedValue.invocationResult, cachedValue.invocationDateTime))
-                        {
-                            invocation.Proceed();
-
-                            addOrUpdateCache
-                                .Invoke
-                                (
-                                    invocation.ReturnValue,
-                                    cachedInvocation,
-                                    cacheKey
-                                );
-                        }
-                        else
-                        {
-                            invocation.ReturnValue = getFromCache.Invoke(cachedValue.invocationResult);
-                        }
-                    }
-                    else
-                    {
-                        invocation.Proceed();
-
-                        addOrUpdateCache
-                            .Invoke
-                            (
-                                invocation.ReturnValue,
-                                cachedInvocation,
-                                cacheKey
-                            );
-                    }
-                }
-                else
-                {
-                    invocation.Proceed();
-
-                    var cache = new ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>();
-
-                    addOrUpdateCache
-                        .Invoke
-                        (
-                            invocation.ReturnValue,
-                            cache,
-                            cacheKey
-                        );
-
-                    CachedInvocations
-                        .TryAdd
-                        (
-                            expectation.Identifier,
-                            cache
-                        );
-                }
+                invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }
             else
             {
-                var returnType = invocation.Method.ReturnType;
-
-                expectation = Expectation.FromInvocation(invocation, _expirationDelegate);
-                addOrUpdateCache = BuildAddOrUpdateDelegateForType(returnType);
-                getFromCache = BuildGetFromCacheDelegateForType(returnType);
-
-                Expectations
-                    .Add
-                    (
-                        (
-                            expectation,
-                            addOrUpdateCache,
-                            getFromCache
-                        )
-                    );
-
-                var cache = new ConcurrentDictionary<string, (object invocationResult, DateTime invocationDateTime)>();
-                CachedInvocations.TryAdd(expectation.Identifier, cache);
-
                 invocation.Proceed();
 
                 addOrUpdateCache
                     .Invoke
                     (
+                        cacheKey,
                         invocation.ReturnValue,
-                        cache,
-                        cacheKey
+                        optionsFactory.Invoke()
                     );
             }
         }
-
-        public PerInstanceAdapter(Func<DateTime,bool> expirationDelegate)
+        else
         {
-            Expression<Func<object, DateTime, bool>> expr = (i, d) => expirationDelegate(d);
-            _expirationDelegate = expr.Compile();
+            var returnType = invocation.Method.ReturnType;
+
+            expectation = Expectation.FromInvocation(invocation);
+            addOrUpdateCache = BuildAddOrUpdateDelegateForType(returnType);
+            getFromCache = BuildGetFromCacheDelegateForType(returnType);
+
+            Expectations
+                .Add
+                (
+                    (
+                        expectation,
+                        addOrUpdateCache,
+                        getFromCache,
+                        _optionsFactory
+                    )
+                );
+
+            invocation.Proceed();
+
+            addOrUpdateCache
+                .Invoke
+                (
+                    cacheKey,
+                    invocation.ReturnValue,
+                    _optionsFactory.Invoke()
+                );
         }
+    }
+
+    public PerInstanceAdapter(ICacheImplementation cacheImplementation, Func<CacheEntryOptions> optionsFactory)
+        : base(cacheImplementation)
+    {
+        _optionsFactory = optionsFactory;
     }
 }
