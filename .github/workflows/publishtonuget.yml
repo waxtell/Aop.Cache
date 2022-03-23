@@ -2,7 +2,7 @@ name: Publish to nuget
 on:
   push:
     branches:
-      - main # Your default release branch
+      - master # Your default release branch
 jobs:
   publish:
     name: publish to nuget
@@ -14,6 +14,6 @@ jobs:
       - name: Publish NuGet
         uses: rohith/publish-nuget@v1.2.0
         with:
-           project_dir: DependencyInjection.KeyedRegistration.Extensions
+           project_dir: Aop.Cache
            tag_format: v*
            nuget_key: ${{secrets.NUGET_API_KEY}}
