@@ -65,14 +65,14 @@ serviceCollection.AddSingleton
 serviceCollection.Decorate<ILengthyOperation>
 (
     (instance, provider) => provider
-                                .GetRequiredService<PerMethodAdapter<ILengthyOperation>>()!
+                                .GetRequiredService<PerMethodAdapter<ILengthyOperation>>()
                                 .Adapt(instance)
 );
 
 serviceCollection.Decorate<ILengthyOperation>
 (
     (inner, provider) => provider
-                            .GetRequiredService<IPerMethodAdapter<ILengthyOperation>>()!
+                            .GetRequiredService<IPerMethodAdapter<ILengthyOperation>>()
                             .Adapt(inner)
 );
 
