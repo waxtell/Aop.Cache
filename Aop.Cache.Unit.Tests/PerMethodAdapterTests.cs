@@ -23,6 +23,21 @@ public class PerMethodAdapterTests
     }
 
     [Fact]
+    public void MultipleCachedInvocationsWithIgnoredParameterYieldsSingleActualInvocation()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, It.IsIgnored<string>()), For.Ever())
+            .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "one");
+        proxy.MethodCall(0, "two");
+
+        Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
+    }
+
+    [Fact]
     public void MultipleCachedInvocationsYieldsSingleActualInvocation()
     {
         var instance = new ForTestingPurposes();

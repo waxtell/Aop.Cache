@@ -11,7 +11,8 @@ internal class Parameter
     {
         Exact,
         Any,
-        NotNull
+        NotNull,
+        Ignore
     }
 
     private Parameter(string serializedValue, MatchPrecision precision)
@@ -35,10 +36,21 @@ internal class Parameter
         return new Parameter(null, MatchPrecision.NotNull);
     }
 
+    public static Parameter Ignore()
+    {
+        return new Parameter(null, MatchPrecision.Ignore);
+    }
+
+    public bool IsEvaluated()
+    {
+        return _precision != MatchPrecision.Ignore;
+    }
+
     public bool IsMatch(object value)
     {
         return _precision switch
         {
+            MatchPrecision.Ignore => true,
             MatchPrecision.Any => true,
             MatchPrecision.NotNull => value != null,
             _ => JsonConvert.SerializeObject(value) == _serializedValue

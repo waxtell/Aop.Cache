@@ -3,7 +3,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
-using Aop.Cache.Extensions;
 using Aop.Cache.ExpirationManagement;
 
 namespace Aop.Cache;
@@ -127,11 +126,11 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
             getFromCache,
             optionsFactory
         ) = Expectations
-                .FirstOrDefault(x => x.expectation.IsHit(invocation));
+        .FirstOrDefault(x => x.expectation.IsHit(invocation));
 
         if (expectation != null)
         {
-            var cacheKey = invocation.ToKey();
+            var cacheKey = expectation.GetCacheKey(invocation);
 
             if (CacheImplementation.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {

@@ -11,4 +11,9 @@ public static class It
     {
         return default;
     }
+
+    public static T IsIgnored<T>()
+    {
+        return default;
+    }
 }

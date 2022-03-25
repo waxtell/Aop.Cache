@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Aop.Cache.ExpirationManagement;
-using Aop.Cache.Extensions;
 using Castle.DynamicProxy;
 
 namespace Aop.Cache;
@@ -26,10 +25,10 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
             optionsFactory
         ) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
 
-        var cacheKey = invocation.ToKey();
-
         if (expectation != null)
         {
+            var cacheKey = expectation.GetCacheKey(invocation);
+
             if (CacheImplementation.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
                 invocation.ReturnValue = getFromCache.Invoke(cachedValue);
@@ -71,7 +70,7 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
             addOrUpdateCache
                 .Invoke
                 (
-                    cacheKey,
+                    expectation.GetCacheKey(invocation),
                     invocation.ReturnValue,
                     _optionsFactory.Invoke()
                 );
