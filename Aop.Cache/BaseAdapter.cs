@@ -48,7 +48,7 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
 {
         return
             (cacheKey, returnValue, memoryCacheEntryOptions) => 
-                (returnValue as Task<TReturn>)
+                (returnValue as Task<TReturn>)!
                     .ContinueWith
                     (
                         i => AddOrUpdate(cacheKey, i.IsFaulted ? i.Exception : i.Result, memoryCacheEntryOptions)
