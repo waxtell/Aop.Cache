@@ -9,6 +9,18 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
 {
     private readonly Func<CacheEntryOptions> _optionsFactory;
 
+    public PerInstanceAdapter(ICacheImplementation cacheImplementation, Func<CacheEntryOptions> optionsFactory)
+        : base(cacheImplementation, _ => { })
+    {
+        _optionsFactory = optionsFactory;
+    }
+
+    public PerInstanceAdapter(ICacheImplementation cacheImplementation, Func<CacheEntryOptions> optionsFactory, Action<CacheOptions> withOptions)
+        : base(cacheImplementation, withOptions)
+    {
+        _optionsFactory = optionsFactory;
+    }
+
     public override void Intercept(IInvocation invocation)
     {
         if (invocation.IsAction())
@@ -22,6 +34,7 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
             expectation, 
             addOrUpdateCache, 
             getFromCache,
+            exceptionDelegate,
             optionsFactory
         ) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
 
@@ -31,19 +44,44 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
 
             if (CacheImplementation.TryGetValue(cacheKey, invocation.MethodInvocationTarget.ReturnType, out var cachedValue))
             {
-                invocation.ReturnValue = getFromCache.Invoke(cachedValue);
+                if (cachedValue is Exception returnException)
+                {
+                    invocation.ReturnValue = exceptionDelegate.Invoke(returnException);
+                }
+                else
+                {
+                    invocation.ReturnValue = getFromCache.Invoke(cachedValue);
+                }
             }
             else
             {
-                invocation.Proceed();
+                try
+                {
+                    invocation.Proceed();
 
-                addOrUpdateCache
-                    .Invoke
-                    (
-                        cacheKey,
-                        invocation.ReturnValue,
-                        optionsFactory.Invoke()
-                    );
+                    addOrUpdateCache
+                        .Invoke
+                        (
+                            cacheKey,
+                            invocation.ReturnValue,
+                            optionsFactory.Invoke()
+                        );
+                }
+                catch (Exception e)
+                {
+                    if (Options.CacheExceptions)
+                    {
+                        CacheImplementation
+                            .Set
+                            (
+                                cacheKey,
+                                e,
+                                optionsFactory.Invoke()
+                            );
+                    }
+
+                    throw;
+                }
             }
         }
         else
@@ -52,34 +90,46 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
 
             expectation = Expectation.FromInvocation(invocation);
             addOrUpdateCache = BuildAddOrUpdateDelegateForType(returnType);
-            getFromCache = BuildGetFromCacheDelegateForType(returnType);
 
             Expectations
                 .Add
-                (
+                ((
+                    expectation,
+                    addOrUpdateCache,
+                    BuildGetFromCacheDelegateForType(returnType),
+                    BuildExceptionDelegateForType(returnType),
+                    _optionsFactory
+                ));
+
+            var cacheKey = expectation.GetCacheKey(invocation);
+
+            try
+            {
+                invocation.Proceed();
+
+                addOrUpdateCache
+                    .Invoke
                     (
-                        expectation,
-                        addOrUpdateCache,
-                        getFromCache,
-                        _optionsFactory
-                    )
-                );
+                        cacheKey,
+                        invocation.ReturnValue,
+                        _optionsFactory.Invoke()
+                    );
+            }
+            catch (Exception e)
+            {
+                if (Options.CacheExceptions)
+                {
+                    CacheImplementation
+                        .Set
+                        (
+                            cacheKey,
+                            e,
+                            _optionsFactory.Invoke()
+                        );
+                }
 
-            invocation.Proceed();
-
-            addOrUpdateCache
-                .Invoke
-                (
-                    expectation.GetCacheKey(invocation),
-                    invocation.ReturnValue,
-                    _optionsFactory.Invoke()
-                );
+                throw;
+            }
         }
-    }
-
-    public PerInstanceAdapter(ICacheImplementation cacheImplementation, Func<CacheEntryOptions> optionsFactory)
-        : base(cacheImplementation)
-    {
-        _optionsFactory = optionsFactory;
     }
 }

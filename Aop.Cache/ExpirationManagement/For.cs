@@ -34,7 +34,13 @@ public static class For
             FromTimeSpan(TimeSpan.FromHours(numHours));
     }
 
-    private static Func<CacheEntryOptions> FromTimeSpan(TimeSpan timeSpan)
+    public static Func<CacheEntryOptions> Days(int numDays)
+    {
+        return
+            FromTimeSpan(TimeSpan.FromDays(numDays));
+    }
+
+    public static Func<CacheEntryOptions> FromTimeSpan(TimeSpan timeSpan)
     {
         return
             () => new CacheEntryOptions
