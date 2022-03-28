@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace Aop.Cache.Unit.Tests;
@@ -13,10 +14,15 @@ public interface IForTestingPurposes
     Task<string> AsyncMethodCall(int arg1, string arg2);
 
     Task AsyncAction(int arg1, int arg2, string arg3);
+
+    int ThrowsException(int arg1);
+    Task<int> ThrowsExceptionAsync(int arg1);
 }
 
 public class ForTestingPurposes : IForTestingPurposes
 {
+    public uint ThrowExceptionAsyncInvocationCount { get; private set; }
+    public uint ThrowExceptionInvocationCount { get; private set; }
     public uint MemberGetInvocationCount { get; private set; }
     public uint MemberSetInvocationCount { get; private set; }
     public uint MethodCallInvocationCount { get; private set; }
@@ -55,6 +61,8 @@ public class ForTestingPurposes : IForTestingPurposes
 
     public ForTestingPurposes()
     {
+        ThrowExceptionAsyncInvocationCount = 0;
+        ThrowExceptionInvocationCount = 0;
         MemberGetInvocationCount = 0;
         MemberSetInvocationCount = 0;
         MethodCallInvocationCount = 0;
@@ -76,5 +84,17 @@ public class ForTestingPurposes : IForTestingPurposes
         AsyncActionCallInvocationCount++;
 
         await Task.Delay(0);
+    }
+
+    public int ThrowsException(int arg1)
+    {
+        ThrowExceptionInvocationCount++;
+        throw new Exception("This is an exception");
+    }
+
+    public Task<int> ThrowsExceptionAsync(int arg1)
+    {
+        ThrowExceptionAsyncInvocationCount++;
+        throw new Exception("This is an exception");
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,6 +9,30 @@ namespace Aop.Cache.Unit.Tests;
 
 public class PerInstanceAdapterTests
 {
+    [Fact]
+    public void ThrownExceptionsAreCachedTest()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever(), options => options.CacheExceptions = true)
+            .Adapt(instance);
+
+        Assert.Throws<Exception>(() => proxy.ThrowsException(0));
+        Assert.Throws<Exception>(() => proxy.ThrowsException(0));
+        Assert.Equal<uint>(1, instance.ThrowExceptionInvocationCount);
+    }
+
+    [Fact]
+    public void AsynchronousThrownExceptionsAreCachedTest()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever(), options => options.CacheExceptions = true)
+            .Adapt(instance);
+
+        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        Assert.Equal<uint>(1, instance.ThrowExceptionAsyncInvocationCount);
+    }
+
     [Fact]
     public void MultipleCachedInvocationsYieldsSingleActualInvocation()
     {

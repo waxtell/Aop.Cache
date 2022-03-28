@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Castle.DynamicProxy;
+using Newtonsoft.Json;
 
 namespace Aop.Cache;
 
@@ -33,6 +34,8 @@ public class Expectation
         {
             switch (methodCall.Method.Name)
             {
+                case nameof(It.IsIgnored):
+                    return Parameter.Ignore();
                 case nameof(It.IsAny):
                     return Parameter.MatchAny();
                 case nameof(It.IsNotNull):
@@ -119,5 +122,32 @@ public class Expectation
         }
 
         return true;
+    }
+
+    public string GetCacheKey(IInvocation invocation)
+    {
+        return
+            JsonConvert
+                .SerializeObject
+                (
+                    new
+                    {
+                        TypeName = invocation.InvocationTarget.GetType().AssemblyQualifiedName,
+                        MethodName = invocation.Method.Name,
+                        ReturnType = invocation.Method.ReturnType.Name,
+                        Arguments = GetArguments()
+                    }
+                );
+
+        IEnumerable<object> GetArguments()
+        {
+            for (var i = 0; i < invocation.Arguments.Length; i++)
+            {
+                if (_parameters.ElementAt(i).IsEvaluated())
+                {
+                    yield return invocation.Arguments[i];
+                }
+            }
+        }
     }
 }

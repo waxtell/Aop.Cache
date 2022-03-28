@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,6 +9,32 @@ namespace Aop.Cache.Unit.Tests;
 
 public class PerMethodAdapterTests
 {
+    [Fact]
+    public void ThrownExceptionsAreCachedTest()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory(), options => options.CacheExceptions = true)
+            .Cache(x => x.ThrowsException(It.IsAny<int>()), For.Ever())
+            .Adapt(instance);
+
+        Assert.Throws<Exception>(() => proxy.ThrowsException(0));
+        Assert.Throws<Exception>(() => proxy.ThrowsException(0));
+        Assert.Equal<uint>(1, instance.ThrowExceptionInvocationCount);
+    }
+
+    [Fact]
+    public void AsynchronousThrownExceptionsAreCachedTest()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory(), options => options.CacheExceptions = true)
+            .Cache(x => x.ThrowsExceptionAsync(It.IsAny<int>()), For.Ever())
+            .Adapt(instance);
+
+        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        Assert.Equal<uint>(1, instance.ThrowExceptionAsyncInvocationCount);
+    }
+
     [Fact]
     public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
     {
@@ -20,6 +47,21 @@ public class PerMethodAdapterTests
         proxy.MethodCall(0, "zero");
 
         Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
+    }
+
+    [Fact]
+    public void MultipleCachedInvocationsWithIgnoredParameterYieldsSingleActualInvocation()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache(x => x.MethodCall(0, It.IsIgnored<string>()), For.Ever())
+            .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "one");
+        proxy.MethodCall(0, "two");
+
+        Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
     }
 
     [Fact]
