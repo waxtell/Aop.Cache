@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>3.1.0</Version>
+    <Version>3.1.1</Version>
     <Authors>Will Axtell</Authors>
     <Description>Simple library for aspect oriented caching.</Description>
     <PackageProjectUrl>https://github.com/waxtell/Aop.Cache</PackageProjectUrl>
@@ -19,6 +19,7 @@
 [2.0.1] Better support for concurrency
 [3.0.0] Support native MS caching providers (BREAKING CHANGE!)
 [3.1.0] Support It.IsIgnored and exception caching
+[3.1.1] Update dependencies, notably NewtonSoft which Dependabot found problematic
     </PackageReleaseNotes>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
@@ -28,8 +29,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Castle.Core" Version="4.4.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Castle.Core" Version="5.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
   </ItemGroup>
