@@ -23,28 +23,28 @@ public class PerMethodAdapterTests
     }
 
     [Fact]
-    public void AsynchronousThrownExceptionsAreCachedTest()
+    public async Task AsynchronousThrownExceptionsAreCachedTest()
     {
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory(), options => options.CacheExceptions = true)
             .Cache(x => x.ThrowsExceptionAsync(It.IsAny<int>()), For.Ever())
             .Adapt(instance);
 
-        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
-        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<AggregateException>(async () => await proxy.ThrowsExceptionAsync(0));
         Assert.Equal<uint>(1, instance.ThrowExceptionAsyncInvocationCount);
     }
 
     [Fact]
-    public void AsynchronousThrownExceptionsAreNotCachedTest()
+    public async Task AsynchronousThrownExceptionsAreNotCachedTest()
     {
         var instance = new ForTestingPurposes();
         var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory(), options => options.CacheExceptions = false)
             .Cache(x => x.ThrowsExceptionAsync(It.IsAny<int>()), For.Ever())
             .Adapt(instance);
 
-        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
-        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
         Assert.Equal<uint>(2, instance.ThrowExceptionAsyncInvocationCount);
     }
 
@@ -155,7 +155,7 @@ public class PerMethodAdapterTests
                         .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
                         .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
 
         await Task.Delay(2000);
 
@@ -213,7 +213,7 @@ public class PerMethodAdapterTests
             .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Milliseconds(1))
             .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
 
         await Task.Delay(2000);
 

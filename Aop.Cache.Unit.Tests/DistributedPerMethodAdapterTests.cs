@@ -136,10 +136,7 @@ public class DistributedPerMethodAdapterTests
                         .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Ever())
                         .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
-
-        await Task.Delay(2000);
-
+        await proxy.AsyncMethodCall(0, "zero");
         var result = await proxy.AsyncMethodCall(0, "zero");
 
         Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
@@ -194,7 +191,7 @@ public class DistributedPerMethodAdapterTests
             .Cache(x => x.AsyncMethodCall(It.IsAny<int>(), "zero"), For.Milliseconds(1))
             .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
 
         await Task.Delay(2000);
 

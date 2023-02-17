@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>3.1.2</Version>
+    <Version>3.1.3</Version>
     <Authors>Will Axtell</Authors>
     <Description>Simple library for aspect oriented caching.</Description>
     <PackageProjectUrl>https://github.com/waxtell/Aop.Cache</PackageProjectUrl>
@@ -21,6 +21,7 @@
       [3.1.0] Support It.IsIgnored and exception caching
       [3.1.1] Update dependencies, notably NewtonSoft which Dependabot found problematic
       [3.1.2] Detect exceptions on pending tasks and throw accordingly
+      [3.1.3] Better implementation for asynchronous task exception handling
     </PackageReleaseNotes>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

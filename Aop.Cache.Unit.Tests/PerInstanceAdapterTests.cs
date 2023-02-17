@@ -22,14 +22,14 @@ public class PerInstanceAdapterTests
     }
 
     [Fact]
-    public void AsynchronousThrownExceptionsAreCachedTest()
+    public async Task AsynchronousThrownExceptionsAreCachedTest()
     {
         var instance = new ForTestingPurposes();
         var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever(), options => options.CacheExceptions = true)
             .Adapt(instance);
 
-        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
-        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<AggregateException>(async () => await proxy.ThrowsExceptionAsync(0));
         Assert.Equal<uint>(1, instance.ThrowExceptionAsyncInvocationCount);
     }
 
@@ -54,11 +54,8 @@ public class PerInstanceAdapterTests
         var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
-
-        await Task.Delay(2000);
-
-        _ = await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
             
         Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
     }
@@ -127,10 +124,8 @@ public class PerInstanceAdapterTests
         var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Milliseconds(1))
             .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
-
+        await proxy.AsyncMethodCall(0, "zero");
         await Task.Delay(2000);
-
         await proxy.AsyncMethodCall(0, "zero");
 
         Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);

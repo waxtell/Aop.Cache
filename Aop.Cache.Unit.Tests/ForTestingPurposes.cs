@@ -92,8 +92,9 @@ public class ForTestingPurposes : IForTestingPurposes
         throw new Exception("This is an exception");
     }
 
-    public Task<int> ThrowsExceptionAsync(int arg1)
+    public async Task<int> ThrowsExceptionAsync(int arg1)
     {
+        await Task.Delay(10);
         ThrowExceptionAsyncInvocationCount++;
         throw new Exception("This is an exception");
     }
