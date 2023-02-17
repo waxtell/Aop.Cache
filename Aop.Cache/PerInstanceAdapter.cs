@@ -34,7 +34,6 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
             expectation, 
             addOrUpdateCache, 
             getFromCache,
-            exceptionDelegate,
             optionsFactory
         ) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
 
@@ -46,12 +45,10 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
             {
                 if (cachedValue is Exception returnException)
                 {
-                    invocation.ReturnValue = exceptionDelegate.Invoke(returnException);
+                    throw returnException;
                 }
-                else
-                {
-                    invocation.ReturnValue = getFromCache.Invoke(cachedValue);
-                }
+
+                invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }
             else
             {
@@ -97,7 +94,6 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
                     expectation,
                     addOrUpdateCache,
                     BuildGetFromCacheDelegateForType(returnType),
-                    BuildExceptionDelegateForType(returnType),
                     _optionsFactory
                 ));
 

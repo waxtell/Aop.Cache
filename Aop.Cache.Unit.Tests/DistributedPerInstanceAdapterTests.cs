@@ -30,11 +30,8 @@ public class DistributedPerInstanceAdapterTests
         var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Ever())
             .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
-
-        await Task.Delay(2000);
-
-        _ = await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
             
         Assert.Equal<uint>(1, instance.AsyncMethodCallInvocationCount);
     }
@@ -103,10 +100,8 @@ public class DistributedPerInstanceAdapterTests
         var proxy = new PerInstanceAdapter<IForTestingPurposes>(CacheFactory(), For.Milliseconds(1))
             .Adapt(instance);
 
-        _ = await proxy.AsyncMethodCall(0, "zero");
-
+        await proxy.AsyncMethodCall(0, "zero");
         await Task.Delay(2000);
-
         await proxy.AsyncMethodCall(0, "zero");
 
         Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);

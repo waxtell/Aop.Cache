@@ -28,8 +28,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                 target, 
                 optionsFactory,
                 BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>(),
-                BuildMarshallCacheResultDelegateForAsynchronousFunc<TReturn>(),
-                BuildExceptionDelegateForAsynchronousFunc<TReturn>()
+                BuildMarshallCacheResultDelegateForAsynchronousFunc<TReturn>()
             );
     }
 
@@ -41,8 +40,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                 target, 
                 optionsFactory,
                 BuildDefaultAddOrUpdateDelegate(),
-                BuildDefaultMarshallCacheResultDelegate(),
-                BuildDefaultExceptionDelegate()
+                BuildDefaultMarshallCacheResultDelegate()
             );
     }
 
@@ -51,8 +49,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         MethodCallExpression expression,
         Func<CacheEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultDelegate marshallResultDelegate,
-        ExceptionDelegate exceptionDelegate
+        MarshallCacheResultDelegate marshallResultDelegate
     )
     {
         Expectations
@@ -65,7 +62,6 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                     ),
                 addOrUpdateCacheDelegate,
                 marshallResultDelegate,
-                exceptionDelegate,
                 optionsFactory
             ));
     }
@@ -75,8 +71,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         MemberExpression expression,
         Func<CacheEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultDelegate marshallResultDelegate,
-        ExceptionDelegate exceptionDelegate
+        MarshallCacheResultDelegate marshallResultDelegate
     )
     {
         Expectations
@@ -85,7 +80,6 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                 Expectation.FromMemberAccessExpression(expression),
                 addOrUpdateCacheDelegate,
                 marshallResultDelegate,
-                exceptionDelegate,
                 optionsFactory
             ));
     }
@@ -95,8 +89,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         Expression<Func<T, TReturn>> target,
         Func<CacheEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultDelegate marshallResultDelegate,
-        ExceptionDelegate exceptionDelegate
+        MarshallCacheResultDelegate marshallResultDelegate
     )
     {
         MethodCallExpression expression = null;
@@ -104,7 +97,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         switch (target.Body)
         {
             case MemberExpression memberExpression:
-                Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, marshallResultDelegate, exceptionDelegate);
+                Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, marshallResultDelegate);
                 return this;
 
             case UnaryExpression unaryExpression:
@@ -119,8 +112,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
             expression, 
             optionsFactory, 
             addOrUpdateCacheDelegate,
-            marshallResultDelegate, 
-            exceptionDelegate
+            marshallResultDelegate
         );
 
         return this;
@@ -139,7 +131,6 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
             expectation, 
             addOrUpdateCache, 
             getFromCache,
-            exceptionDelegate,
             optionsFactory
         ) = Expectations
         .FirstOrDefault(x => x.expectation.IsHit(invocation));
@@ -152,27 +143,16 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
             {
                 if (cachedValue is Exception returnException)
                 {
-                    invocation.ReturnValue = exceptionDelegate.Invoke(returnException);
+                    throw returnException;
                 }
-                else
-                {
-                    invocation.ReturnValue = getFromCache.Invoke(cachedValue);
-                }
+                
+                invocation.ReturnValue = getFromCache.Invoke(cachedValue);
             }
             else
             {
                 try
                 {
                     invocation.Proceed();
-
-                    if (invocation.ReturnValue is Task task)
-                    {
-                        if (task.IsFaulted && task.Exception != null)
-                        {
-                            throw 
-                                task.Exception;
-                        }
-                    }
 
                     addOrUpdateCache
                         .Invoke

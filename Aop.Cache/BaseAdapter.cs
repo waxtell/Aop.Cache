@@ -1,5 +1,4 @@
 ﻿global using MarshallCacheResultDelegate = System.Func<object, object>;
-global using ExceptionDelegate = System.Func<System.Exception, object>;
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,7 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
 {
     public delegate void AddOrUpdateDelegate(string cacheKey, object result, CacheEntryOptions entryOptions);
 
-    protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate, ExceptionDelegate exceptionDelegate, Func<CacheEntryOptions> optionsFactory)> Expectations = new();
+    protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate, Func<CacheEntryOptions> optionsFactory)> Expectations = new();
     protected readonly CacheOptions Options;
 
     protected BaseAdapter(ICacheImplementation cacheImplementation, Action<CacheOptions> withOptions)
@@ -51,7 +50,21 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
                 (returnValue as Task<TReturn>)!
                     .ContinueWith
                     (
-                        i => AddOrUpdate(cacheKey, i.IsFaulted ? i.Exception : i.Result, memoryCacheEntryOptions)
+                        i =>
+                        {
+                            if (i.IsFaulted)
+                            {
+                                if (Options.CacheExceptions)
+                                {
+                                    AddOrUpdate(cacheKey, i.Exception, memoryCacheEntryOptions);
+                                }
+                            }
+                            else
+                            {
+                                AddOrUpdate(cacheKey, i.Result, memoryCacheEntryOptions);
+                            }
+                        }, 
+                        TaskContinuationOptions.ExecuteSynchronously
                     );
     }
 
@@ -65,7 +78,7 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
     {
         var returnType = tReturn?.GetTypeInfo();
 
-        if (returnType != null && returnType.IsGenericType)
+        if (returnType is { IsGenericType: true })
         {
             var gt = returnType.GetGenericTypeDefinition();
 
@@ -80,14 +93,12 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
 
     protected static MarshallCacheResultDelegate BuildGetFromCacheDelegateForAsynchronousFuncForType(Type tReturn)
     {
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
         var mi = typeof(BaseAdapter<T>)
             .GetMethod
             (
                 nameof(BuildMarshallCacheResultDelegateForAsynchronousFunc), 
                 BindingFlags.NonPublic | BindingFlags.Static
             );
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
         var miConstructed = mi?.MakeGenericMethod(tReturn);
 
@@ -98,7 +109,7 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
     {
         var returnType = tReturn?.GetTypeInfo();
 
-        if (returnType != null && returnType.IsGenericType)
+        if (returnType is { IsGenericType: true })
         {
             var gt = returnType.GetGenericTypeDefinition();
 
@@ -113,63 +124,16 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
 
     private AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFuncForType(Type tReturn)
     {
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
         var mi = typeof(BaseAdapter<T>)
                     .GetMethod
                     (
                         nameof(BuildAddOrUpdateDelegateForAsynchronousFunc), 
                         BindingFlags.NonPublic | BindingFlags.Instance
                     );
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
         var miConstructed = mi?.MakeGenericMethod(tReturn);
 
         return (AddOrUpdateDelegate) miConstructed?.Invoke(this, null);
-    }
-
-    protected static ExceptionDelegate BuildDefaultExceptionDelegate()
-    {
-        return 
-            ex => throw ex;
-    }
-
-    protected static ExceptionDelegate BuildExceptionDelegateForAsynchronousFunc<TReturn>()
-    {
-        return
-            Task.FromException<TReturn>;
-    }
-
-    protected static ExceptionDelegate BuildExceptionDelegateForAsynchronousFuncForType(Type tReturn)
-    {
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-        var mi = typeof(BaseAdapter<T>)
-            .GetMethod
-            (
-                nameof(BuildExceptionDelegateForAsynchronousFunc),
-                BindingFlags.NonPublic | BindingFlags.Static
-            );
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-
-        var miConstructed = mi?.MakeGenericMethod(tReturn);
-
-        return (ExceptionDelegate)miConstructed?.Invoke(null, null);
-    }
-
-    protected ExceptionDelegate BuildExceptionDelegateForType(Type tReturn)
-    {
-        var returnType = tReturn?.GetTypeInfo();
-
-        if (returnType != null && returnType.IsGenericType)
-        {
-            var gt = returnType.GetGenericTypeDefinition();
-
-            if (gt == typeof(Task<>))
-            {
-                return BuildExceptionDelegateForAsynchronousFuncForType(tReturn);
-            }
-        }
-
-        return BuildDefaultExceptionDelegate();
     }
 
     public T Adapt(T instance)
