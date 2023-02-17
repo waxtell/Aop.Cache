@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>3.1.1</Version>
+    <Version>3.1.2</Version>
     <Authors>Will Axtell</Authors>
     <Description>Simple library for aspect oriented caching.</Description>
     <PackageProjectUrl>https://github.com/waxtell/Aop.Cache</PackageProjectUrl>
@@ -10,16 +10,17 @@
     <RepositoryUrl>https://github.com/waxtell/Aop.Cache.git</RepositoryUrl>
     <PackageTags>Cache AOP DynamicProxy</PackageTags>
     <PackageReleaseNotes>
-[1.1.0] Initial release
-[1.2.0] Support for MemberExpression (property getters)
-[1.3.0] Support for instance centric caching
-[1.4.0] Per method caching now supports asynchronous methods
-[1.5.0] Per instance caching now supports asynchronous methods.
-[2.0.0] Separated configuration and instantiation to allow for better lifetime management (BREAKING CHANGE!)
-[2.0.1] Better support for concurrency
-[3.0.0] Support native MS caching providers (BREAKING CHANGE!)
-[3.1.0] Support It.IsIgnored and exception caching
-[3.1.1] Update dependencies, notably NewtonSoft which Dependabot found problematic
+      [1.1.0] Initial release
+      [1.2.0] Support for MemberExpression (property getters)
+      [1.3.0] Support for instance centric caching
+      [1.4.0] Per method caching now supports asynchronous methods
+      [1.5.0] Per instance caching now supports asynchronous methods.
+      [2.0.0] Separated configuration and instantiation to allow for better lifetime management (BREAKING CHANGE!)
+      [2.0.1] Better support for concurrency
+      [3.0.0] Support native MS caching providers (BREAKING CHANGE!)
+      [3.1.0] Support It.IsIgnored and exception caching
+      [3.1.1] Update dependencies, notably NewtonSoft which Dependabot found problematic
+      [3.1.2] Detect exceptions on pending tasks and throw accordingly
     </PackageReleaseNotes>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

@@ -165,6 +165,15 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                 {
                     invocation.Proceed();
 
+                    if (invocation.ReturnValue is Task task)
+                    {
+                        if (task.IsFaulted && task.Exception != null)
+                        {
+                            throw 
+                                task.Exception;
+                        }
+                    }
+
                     addOrUpdateCache
                         .Invoke
                         (

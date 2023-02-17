@@ -36,6 +36,19 @@ public class PerMethodAdapterTests
     }
 
     [Fact]
+    public void AsynchronousThrownExceptionsAreNotCachedTest()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory(), options => options.CacheExceptions = false)
+            .Cache(x => x.ThrowsExceptionAsync(It.IsAny<int>()), For.Ever())
+            .Adapt(instance);
+
+        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
+        Assert.Equal<uint>(2, instance.ThrowExceptionAsyncInvocationCount);
+    }
+
+    [Fact]
     public void MultipleNonCachedInvocationsYieldsMultipleInvocations()
     {
         var instance = new ForTestingPurposes();
