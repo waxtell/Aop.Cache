@@ -31,7 +31,7 @@ public class PerMethodAdapterTests
             .Adapt(instance);
 
         await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
-        await Assert.ThrowsAsync<AggregateException>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
         Assert.Equal<uint>(1, instance.ThrowExceptionAsyncInvocationCount);
     }
 
@@ -220,6 +220,85 @@ public class PerMethodAdapterTests
         await proxy.AsyncMethodCall(0, "zero");
 
         Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
+    }
+
+    [Fact]
+    public async Task ExcludedValueIsNotCachedAsync() 
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache
+                        (
+                            x => x.AsyncMethodCall(It.IsAny<int>(), It.IsAny<string>()), 
+                            For.Ever(), 
+                            s => s.Result == "0zero"
+                        )
+                        .Adapt(instance);
+
+        await proxy.AsyncMethodCall(0, "zero");
+        await proxy.AsyncMethodCall(0, "zero");
+
+        Assert.Equal<uint>(2, instance.AsyncMethodCallInvocationCount);
+    }
+
+    [Fact]
+    public void ExcludedValueIsNotCached() 
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache
+                        (
+                            x => x.MethodCall(It.IsAny<int>(), It.IsAny<string>()),
+                            For.Ever(),
+                            s => s == "0zero"
+                        )
+                        .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(0, "zero");
+
+        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
+    }
+
+    [Fact]
+    public void ExcludedNullIsNotCached()
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+            .Cache
+            (
+                x => x.ReturnsNullForOddNumbers(It.IsAny<int>()),
+                For.Ever(),
+                s => s == null
+            )
+            .Adapt(instance);
+
+        proxy.ReturnsNullForOddNumbers(3);
+        proxy.ReturnsNullForOddNumbers(3);
+        proxy.ReturnsNullForOddNumbers(4);
+
+        Assert.Equal<uint>(3, instance.ReturnsNullForOddNumbersInvocationCount);
+    }
+
+
+    [Fact]
+    public void MultipleExcludedValuesAreNotCached() 
+    {
+        var instance = new ForTestingPurposes();
+        var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                        .Cache
+                        (
+                            x => x.MethodCall(It.IsAny<int>(), It.IsAny<string>()),
+                            For.Ever(),
+                            x => x == "0zero", 
+                            y => y == null
+                        )
+                        .Adapt(instance);
+
+        proxy.MethodCall(0, "zero");
+        proxy.MethodCall(1, "one");
+
+        Assert.Equal<uint>(2, instance.MethodCallInvocationCount);
     }
 
     public static ICacheImplementation CacheFactory()

@@ -9,14 +9,13 @@ public interface IForTestingPurposes
 
     string Member { get; set; }
 
-    string VirtualMethodCall(int arg1, string arg2);
-
     Task<string> AsyncMethodCall(int arg1, string arg2);
 
     Task AsyncAction(int arg1, int arg2, string arg3);
 
     int ThrowsException(int arg1);
     Task<int> ThrowsExceptionAsync(int arg1);
+    int? ReturnsNullForOddNumbers(int arg1);
 }
 
 public class ForTestingPurposes : IForTestingPurposes
@@ -29,6 +28,7 @@ public class ForTestingPurposes : IForTestingPurposes
     public uint VirtualMethodCallInvocationCount { get; private set; }
     public uint AsyncMethodCallInvocationCount { get; private set; }
     public uint AsyncActionCallInvocationCount { get; private set; }
+    public uint ReturnsNullForOddNumbersInvocationCount { get; private set; }
 
     private string _member;
 
@@ -70,20 +70,20 @@ public class ForTestingPurposes : IForTestingPurposes
         AsyncActionCallInvocationCount = 0;
     }
 
-    public async Task<string> AsyncMethodCall(int arg1, string arg2)
+    public Task<string> AsyncMethodCall(int arg1, string arg2)
     {
         AsyncMethodCallInvocationCount++;
 
-        await Task.Delay(0);
-
-        return arg1 + arg2;
+        return 
+            Task.FromResult(arg1 + arg2);
     }
 
-    public async Task AsyncAction(int arg1, int arg2, string arg3)
+    public Task AsyncAction(int arg1, int arg2, string arg3)
     {
         AsyncActionCallInvocationCount++;
 
-        await Task.Delay(0);
+        return 
+            Task.CompletedTask;
     }
 
     public int ThrowsException(int arg1)
@@ -92,10 +92,17 @@ public class ForTestingPurposes : IForTestingPurposes
         throw new Exception("This is an exception");
     }
 
-    public async Task<int> ThrowsExceptionAsync(int arg1)
+    public Task<int> ThrowsExceptionAsync(int arg1)
     {
-        await Task.Delay(10);
         ThrowExceptionAsyncInvocationCount++;
         throw new Exception("This is an exception");
+    }
+
+    public int? ReturnsNullForOddNumbers(int arg1)
+    {
+        ReturnsNullForOddNumbersInvocationCount++;
+
+        return
+            arg1 % 2 > 0 ? null : arg1;
     }
 }

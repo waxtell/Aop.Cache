@@ -29,7 +29,7 @@ public class PerInstanceAdapterTests
             .Adapt(instance);
 
         await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
-        await Assert.ThrowsAsync<AggregateException>(async () => await proxy.ThrowsExceptionAsync(0));
+        await Assert.ThrowsAsync<Exception>(async () => await proxy.ThrowsExceptionAsync(0));
         Assert.Equal<uint>(1, instance.ThrowExceptionAsyncInvocationCount);
     }
 

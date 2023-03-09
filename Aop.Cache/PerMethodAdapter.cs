@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
     {
     }
 
-    public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target, Func<CacheEntryOptions> optionsFactory)
+    public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, Task<TReturn>>> target, Func<CacheEntryOptions> optionsFactory, params Func<Task<TReturn>, bool>[] exclusions)
     {
         return 
             Cache
@@ -28,19 +29,23 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                 target, 
                 optionsFactory,
                 BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>(),
-                BuildMarshallCacheResultDelegateForAsynchronousFunc<TReturn>()
+                BuildMarshallCacheResultDelegateForAsynchronousFunc<TReturn>(),
+                exclusions.Select(ExclusionWrapper).ToList()
             );
     }
 
-    public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<CacheEntryOptions> optionsFactory)
+    private static Func<object, bool> ExclusionWrapper<TReturn>(Func<TReturn, bool> func) => returnValue => func((TReturn)returnValue);
+
+    public IPerMethodAdapter<T> Cache<TReturn>(Expression<Func<T, TReturn>> target, Func<CacheEntryOptions> optionsFactory, params Func<TReturn, bool>[] exclusions)
     {
         return
             Cache
             (
                 target, 
                 optionsFactory,
-                BuildDefaultAddOrUpdateDelegate(),
-                BuildDefaultMarshallCacheResultDelegate()
+                BuildDefaultAddOrUpdateDelegate<TReturn>(),
+                BuildDefaultMarshallCacheResultDelegate(),
+                exclusions.Select(ExclusionWrapper).ToList()
             );
     }
 
@@ -49,7 +54,8 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         MethodCallExpression expression,
         Func<CacheEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultDelegate marshallResultDelegate
+        MarshallCacheResultDelegate marshallResultDelegate,
+        List<Func<object,bool>> exclusions
     )
     {
         Expectations
@@ -62,7 +68,8 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                     ),
                 addOrUpdateCacheDelegate,
                 marshallResultDelegate,
-                optionsFactory
+                optionsFactory,
+                exclusions
             ));
     }
 
@@ -71,7 +78,8 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         MemberExpression expression,
         Func<CacheEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultDelegate marshallResultDelegate
+        MarshallCacheResultDelegate marshallResultDelegate,
+        List<Func<object, bool>> exclusions
     )
     {
         Expectations
@@ -80,7 +88,8 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                 Expectation.FromMemberAccessExpression(expression),
                 addOrUpdateCacheDelegate,
                 marshallResultDelegate,
-                optionsFactory
+                optionsFactory,
+                exclusions
             ));
     }
 
@@ -89,15 +98,15 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
         Expression<Func<T, TReturn>> target,
         Func<CacheEntryOptions> optionsFactory,
         AddOrUpdateDelegate addOrUpdateCacheDelegate,
-        MarshallCacheResultDelegate marshallResultDelegate
-    )
+        MarshallCacheResultDelegate marshallResultDelegate,
+        List<Func<object,bool>> exclusions)
     {
         MethodCallExpression expression = null;
 
         switch (target.Body)
         {
             case MemberExpression memberExpression:
-                Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, marshallResultDelegate);
+                Cache(memberExpression, optionsFactory, addOrUpdateCacheDelegate, marshallResultDelegate,exclusions);
                 return this;
 
             case UnaryExpression unaryExpression:
@@ -112,7 +121,8 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
             expression, 
             optionsFactory, 
             addOrUpdateCacheDelegate,
-            marshallResultDelegate
+            marshallResultDelegate,
+            exclusions
         );
 
         return this;
@@ -131,7 +141,8 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
             expectation, 
             addOrUpdateCache, 
             getFromCache,
-            optionsFactory
+            optionsFactory,
+            exclusions
         ) = Expectations
         .FirstOrDefault(x => x.expectation.IsHit(invocation));
 
@@ -159,21 +170,20 @@ public class PerMethodAdapter<T> : BaseAdapter<T>, IPerMethodAdapter<T>
                         (
                             cacheKey,
                             invocation.ReturnValue,
-                            optionsFactory.Invoke()
+                            optionsFactory.Invoke(),
+                            exclusions
                         );
                 }
                 catch (Exception e)
                 {
-                    if (Options.CacheExceptions)
-                    {
-                        CacheImplementation
-                            .Set
-                            (
-                                cacheKey,
-                                e,
-                                optionsFactory.Invoke()
-                            );
-                    }
+                    addOrUpdateCache
+                        .Invoke
+                        (
+                            cacheKey,
+                            e,
+                            optionsFactory.Invoke(),
+                            exclusions
+                        );
 
                     throw;
                 }

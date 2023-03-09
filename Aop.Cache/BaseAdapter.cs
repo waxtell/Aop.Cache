@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Aop.Cache.ExpirationManagement;
@@ -11,9 +12,9 @@ namespace Aop.Cache;
 
 public abstract class BaseAdapter<T> : IInterceptor where T : class
 {
-    public delegate void AddOrUpdateDelegate(string cacheKey, object result, CacheEntryOptions entryOptions);
+    public delegate void AddOrUpdateDelegate(string cacheKey, object result, CacheEntryOptions entryOptions, List<Func<object,bool>> exclusions);
 
-    protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate, Func<CacheEntryOptions> optionsFactory)> Expectations = new();
+    protected readonly List<(Expectation expectation, AddOrUpdateDelegate addOrUpdateCacheDelegate, MarshallCacheResultDelegate marshallResultDelegate, Func<CacheEntryOptions> optionsFactory, List<Func<object, bool>> exclusions)> Expectations = new();
     protected readonly CacheOptions Options;
 
     protected BaseAdapter(ICacheImplementation cacheImplementation, Action<CacheOptions> withOptions)
@@ -44,34 +45,56 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
     }
 
     protected AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFunc<TReturn>()
-{
-        return
-            (cacheKey, returnValue, memoryCacheEntryOptions) => 
-                (returnValue as Task<TReturn>)!
-                    .ContinueWith
-                    (
-                        i =>
-                        {
-                            if (i.IsFaulted)
-                            {
-                                if (Options.CacheExceptions)
-                                {
-                                    AddOrUpdate(cacheKey, i.Exception, memoryCacheEntryOptions);
-                                }
-                            }
-                            else
-                            {
-                                AddOrUpdate(cacheKey, i.Result, memoryCacheEntryOptions);
-                            }
-                        }, 
-                        TaskContinuationOptions.ExecuteSynchronously
-                    );
-    }
-
-    protected AddOrUpdateDelegate BuildDefaultAddOrUpdateDelegate()
     {
         return
-            AddOrUpdate;
+            (cacheKey, returnValue, memoryCacheEntryOptions, exclusions) =>
+            {
+                if (returnValue is Exception)
+                {
+                    if (Options.CacheExceptions)
+                    {
+                        AddOrUpdate(cacheKey, returnValue, memoryCacheEntryOptions);
+                    }
+                }
+                else
+                {
+                    (returnValue as Task<TReturn>)!
+                        .ContinueWith
+                        (
+                            i =>
+                            {
+                                if (i.IsFaulted)
+                                {
+                                    if (Options.CacheExceptions)
+                                    {
+                                        AddOrUpdate(cacheKey, i.Exception, memoryCacheEntryOptions);
+                                    }
+                                }
+                                else if (!exclusions.Any(x => x(i)))
+                                {
+                                    AddOrUpdate(cacheKey, i.Result, memoryCacheEntryOptions);
+                                }
+                            },
+                            TaskContinuationOptions.ExecuteSynchronously
+                        );
+                }
+            };
+    }
+
+    protected AddOrUpdateDelegate BuildDefaultAddOrUpdateDelegate<TReturn>()
+    {
+        return
+            (cacheKey, result, options, exclusions) =>
+            {
+                if (result is Exception && Options.CacheExceptions)
+                {
+                    AddOrUpdate(cacheKey, result, options);
+                }
+                else if (!exclusions.Any(x => x((TReturn)result)))
+                {
+                    AddOrUpdate(cacheKey, result, options);
+                }
+            };
     }
 
     protected static MarshallCacheResultDelegate BuildGetFromCacheDelegateForType(Type tReturn)
@@ -119,7 +142,20 @@ public abstract class BaseAdapter<T> : IInterceptor where T : class
             }
         }
 
-        return BuildDefaultAddOrUpdateDelegate();
+        return BuildAddOrUpdateDelegateForSynchronousFuncForType(tReturn);
+    }
+
+    private AddOrUpdateDelegate BuildAddOrUpdateDelegateForSynchronousFuncForType(Type tReturn) {
+        var mi = typeof(BaseAdapter<T>)
+            .GetMethod
+            (
+                nameof(BuildDefaultAddOrUpdateDelegate),
+                BindingFlags.NonPublic | BindingFlags.Instance
+            );
+
+        var miConstructed = mi?.MakeGenericMethod(tReturn);
+
+        return (AddOrUpdateDelegate)miConstructed?.Invoke(this, null);
     }
 
     private AddOrUpdateDelegate BuildAddOrUpdateDelegateForAsynchronousFuncForType(Type tReturn)

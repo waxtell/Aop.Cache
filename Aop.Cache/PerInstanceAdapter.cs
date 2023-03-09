@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Aop.Cache.ExpirationManagement;
 using Castle.DynamicProxy;
@@ -34,7 +35,8 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
             expectation, 
             addOrUpdateCache, 
             getFromCache,
-            optionsFactory
+            optionsFactory,
+            exclusions
         ) = Expectations.FirstOrDefault(x => x.expectation.IsHit(invocation));
 
         if (expectation != null)
@@ -61,21 +63,20 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
                         (
                             cacheKey,
                             invocation.ReturnValue,
-                            optionsFactory.Invoke()
+                            optionsFactory.Invoke(),
+                            exclusions
                         );
                 }
                 catch (Exception e)
                 {
-                    if (Options.CacheExceptions)
-                    {
-                        CacheImplementation
-                            .Set
-                            (
-                                cacheKey,
-                                e,
-                                optionsFactory.Invoke()
-                            );
-                    }
+                    addOrUpdateCache
+                        .Invoke
+                        (
+                            cacheKey,
+                            e,
+                            optionsFactory.Invoke(),
+                            exclusions
+                        );
 
                     throw;
                 }
@@ -87,6 +88,7 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
 
             expectation = Expectation.FromInvocation(invocation);
             addOrUpdateCache = BuildAddOrUpdateDelegateForType(returnType);
+            exclusions = new List<Func<object, bool>>();
 
             Expectations
                 .Add
@@ -94,7 +96,8 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
                     expectation,
                     addOrUpdateCache,
                     BuildGetFromCacheDelegateForType(returnType),
-                    _optionsFactory
+                    _optionsFactory,
+                    exclusions
                 ));
 
             var cacheKey = expectation.GetCacheKey(invocation);
@@ -108,21 +111,20 @@ public class PerInstanceAdapter<T> : BaseAdapter<T>, IPerInstanceAdapter<T> wher
                     (
                         cacheKey,
                         invocation.ReturnValue,
-                        _optionsFactory.Invoke()
+                        _optionsFactory.Invoke(),
+                        exclusions
                     );
             }
             catch (Exception e)
             {
-                if (Options.CacheExceptions)
-                {
-                    CacheImplementation
-                        .Set
-                        (
-                            cacheKey,
-                            e,
-                            _optionsFactory.Invoke()
-                        );
-                }
+                addOrUpdateCache
+                    .Invoke
+                    (
+                        cacheKey,
+                        e,
+                        _optionsFactory.Invoke(),
+                        exclusions
+                    );
 
                 throw;
             }
