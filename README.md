@@ -45,6 +45,28 @@ public void MixedFuzzyInvocationsYieldsMultipleActualInvocations()
     Assert.Equal<uint>(3, instance.MethodCallInvocationCount);
 }
 ```
+**Result exclusion**
+```csharp
+[Fact]
+public void ExcludedNullIsNotCached()
+{
+    var instance = new ForTestingPurposes();
+    var proxy = new PerMethodAdapter<IForTestingPurposes>(CacheFactory())
+                    .Cache
+                    (
+                        x => x.ReturnsNullForOddNumbers(It.IsAny<int>()),
+                        For.Ever(),
+                        s => s == null
+                    )
+                    .Adapt(instance);
+
+    proxy.ReturnsNullForOddNumbers(3);
+    proxy.ReturnsNullForOddNumbers(3);
+    proxy.ReturnsNullForOddNumbers(4);
+
+    Assert.Equal<uint>(3, instance.ReturnsNullForOddNumbersInvocationCount);
+}
+```
 **Per Instance (All methods cached)**
 ```csharp
 [Fact]
@@ -61,6 +83,3 @@ public void MultipleCachedInvocationsYieldsSingleActualInvocation()
     Assert.Equal<uint>(1, instance.MethodCallInvocationCount);
 }
 ```
-
-[TODO]
-1) Replace reflection with expressions in per instance async code
