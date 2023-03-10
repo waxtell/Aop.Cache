@@ -56,7 +56,7 @@ ServiceCollection BindingsForMemoryCache()
             _ => new MemoryCache(Options.Create(new MemoryCacheOptions()))
         );
 
-    serviceCollection.AddSingleton<ILengthyOperation, LengthyOperation>();
+    serviceCollection.AddTransient<ILengthyOperation, LengthyOperation>();
 
     serviceCollection
         .AddSingleton
@@ -99,7 +99,7 @@ ServiceCollection BindingsForDistributedCache()
             _ => new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()))
         );
 
-    serviceCollection.AddSingleton<ILengthyOperation, LengthyOperation>();
+    serviceCollection.AddTransient<ILengthyOperation, LengthyOperation>();
 
     serviceCollection
         .AddSingleton
@@ -148,7 +148,7 @@ ServiceCollection BindingsForTwoStageCache()
             _ => new MemoryCache(Options.Create(new MemoryCacheOptions()))
         );
 
-    serviceCollection.AddSingleton<ILengthyOperation, LengthyOperation>();
+    serviceCollection.AddTransient<ILengthyOperation, LengthyOperation>();
     serviceCollection.AddSingleton
     (
         provider =>
